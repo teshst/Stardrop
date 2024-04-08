@@ -5,13 +5,13 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:i="clr-namespace:Projektanker.Icons.Avalonia;assembly=Projektanker.Icons.Avalonia"
 		xmlns:i18n="clr-namespace:Stardrop.Utilities.Extension"
-        mc:Ignorable="d" d:DesignWidth="430" d:DesignHeight="350"
+        mc:Ignorable="d" d:DesignWidth="430" d:DesignHeight="650"
         x:Class="Stardrop.Views.SettingsWindow"
         Title="{i18n:Translate ui.window.settings.name}"
         MinWidth="430"
-        MinHeight="650"
+        MinHeight="430"
         Width="430"
-        Height="650"
+        Height="500"
         Background="{DynamicResource ThemeBackgroundBrush}"
         HasSystemDecorations="true"
         ExtendClientAreaToDecorationsHint="true"
@@ -160,8 +160,10 @@
 			<RowDefinition Height="Auto" />
 			<RowDefinition Height="Auto" />
 			<RowDefinition Height="Auto" />
-			<RowDefinition Height="*" />
+			<RowDefinition Height="Auto" />
+			<RowDefinition Height="25" />
 			<RowDefinition Height="50" />
+			<RowDefinition Height="Auto" />
 		</Grid.RowDefinitions>
 
 		<Grid.ColumnDefinitions>
@@ -178,49 +180,54 @@
 			<Button Name="exitButton" i:Attached.Icon="mdi-close" Margin="0 0 -10 0" Foreground="{DynamicResource ThemeForegroundBrush}" Background="Transparent"/>
 		</Menu>
 
-		<StackPanel Grid.Row="1" Grid.ColumnSpan="2" Margin="10 10 0 0">
-			<TextBlock Text="{i18n:Translate ui.settings_window.labels.smapi_path}" VerticalAlignment="Center" HorizontalAlignment="Left" Foreground="{DynamicResource ThemeForegroundBrush}" />
-			<TextBox Name="smapiFolderPathBox" Text="{Binding SMAPIPath}" ToolTip.Tip="{Binding ToolTip_SMAPI}" Margin="10 10 0 0" Height="10" Width="350" BorderBrush="{DynamicResource HighlightBrush}" HorizontalAlignment="Left"/>
-			<Button Name="smapiFolderButton" Margin="360 -32 0 0" i:Attached.Icon="mdi-folder" Foreground="{DynamicResource ThemeForegroundBrush}" Background="Transparent" HorizontalAlignment="Left" />
+		<ScrollViewer AllowAutoHide="True" Height="350" Grid.Row="1" Grid.ColumnSpan="2">
+			<StackPanel>
+				<StackPanel Grid.Row="1" Grid.ColumnSpan="2" Margin="10 10 0 0">
+					<TextBlock Text="{i18n:Translate ui.settings_window.labels.smapi_path}" VerticalAlignment="Center" HorizontalAlignment="Left" Foreground="{DynamicResource ThemeForegroundBrush}" />
+					<TextBox Name="smapiFolderPathBox" Text="{Binding SMAPIPath}" ToolTip.Tip="{Binding ToolTip_SMAPI}" Margin="10 10 0 0" Height="10" Width="350" BorderBrush="{DynamicResource HighlightBrush}" HorizontalAlignment="Left"/>
+					<Button Name="smapiFolderButton" Margin="360 -32 0 0" i:Attached.Icon="mdi-folder" Foreground="{DynamicResource ThemeForegroundBrush}" Background="Transparent" HorizontalAlignment="Left" />
 
-			<TextBlock Text="{i18n:Translate ui.settings_window.labels.mod_path}" Margin="0 10 0 0" VerticalAlignment="Center" HorizontalAlignment="Left" Foreground="{DynamicResource ThemeForegroundBrush}" />
-			<TextBox Name="modFolderPathBox" Text="{Binding ModFolderPath}" ToolTip.Tip="{Binding ToolTip_ModFolder}" Margin="10 10 0 0" Height="10" Width="350" BorderBrush="{DynamicResource HighlightBrush}" HorizontalAlignment="Left"/>
-			<Button Name="modFolderButton" Margin="360 -32 0 0" i:Attached.Icon="mdi-folder" Foreground="{DynamicResource ThemeForegroundBrush}" Background="Transparent" HorizontalAlignment="Left" />
+					<TextBlock Text="{i18n:Translate ui.settings_window.labels.mod_path}" Margin="0 10 0 0" VerticalAlignment="Center" HorizontalAlignment="Left" Foreground="{DynamicResource ThemeForegroundBrush}" />
+					<TextBox Name="modFolderPathBox" Text="{Binding ModFolderPath}" ToolTip.Tip="{Binding ToolTip_ModFolder}" Margin="10 10 0 0" Height="10" Width="350" BorderBrush="{DynamicResource HighlightBrush}" HorizontalAlignment="Left"/>
+					<Button Name="modFolderButton" Margin="360 -32 0 0" i:Attached.Icon="mdi-folder" Foreground="{DynamicResource ThemeForegroundBrush}" Background="Transparent" HorizontalAlignment="Left" />
 
-			<TextBlock Text="{i18n:Translate ui.settings_window.labels.mod_install}" Margin="0 10 0 0" VerticalAlignment="Center" HorizontalAlignment="Left" Foreground="{DynamicResource ThemeForegroundBrush}" />
-			<TextBox Name="modInstallPathBox" Text="{Binding ModInstallPath}" ToolTip.Tip="{Binding ToolTip_ModInstall}" Margin="10 10 0 0" Height="10" Width="350" BorderBrush="{DynamicResource HighlightBrush}" HorizontalAlignment="Left"/>
-			<Button Name="modInstallButton" Margin="360 -32 0 0" i:Attached.Icon="mdi-folder" Foreground="{DynamicResource ThemeForegroundBrush}" Background="Transparent" HorizontalAlignment="Left" />
-		</StackPanel>
+					<TextBlock Text="{i18n:Translate ui.settings_window.labels.mod_install}" Margin="0 10 0 0" VerticalAlignment="Center" HorizontalAlignment="Left" Foreground="{DynamicResource ThemeForegroundBrush}" />
+					<TextBox Name="modInstallPathBox" Text="{Binding ModInstallPath}" ToolTip.Tip="{Binding ToolTip_ModInstall}" Margin="10 10 0 0" Height="10" Width="350" BorderBrush="{DynamicResource HighlightBrush}" HorizontalAlignment="Left"/>
+					<Button Name="modInstallButton" Margin="360 -32 0 0" i:Attached.Icon="mdi-folder" Foreground="{DynamicResource ThemeForegroundBrush}" Background="Transparent" HorizontalAlignment="Left" />
+				</StackPanel>
 
-		<StackPanel Grid.Row="2" Margin="10 10 0 0">
-			<TextBlock Text="{i18n:Translate ui.settings_window.labels.themes}" VerticalAlignment="Center" HorizontalAlignment="Left" Foreground="{DynamicResource ThemeForegroundBrush}" />
-			<ComboBox Name="themeComboBox" ToolTip.Tip="{Binding ToolTip_Theme}" Margin="10 10 0 10" Width="150" Background="{DynamicResource ThemeBackgroundBrush}" Foreground="{DynamicResource ThemeForegroundBrush}" BorderBrush="{DynamicResource HighlightBrush}" HorizontalAlignment="Left"/>
-			<TextBlock Text="{i18n:Translate ui.settings_window.labels.languages}" VerticalAlignment="Center" HorizontalAlignment="Left" Foreground="{DynamicResource ThemeForegroundBrush}" />
-			<ComboBox Name="languageComboBox" ToolTip.Tip="{Binding ToolTip_Language}" Margin="10 10 0 10" Width="150" Background="{DynamicResource ThemeBackgroundBrush}" Foreground="{DynamicResource ThemeForegroundBrush}" BorderBrush="{DynamicResource HighlightBrush}" HorizontalAlignment="Left"/>
-			<TextBlock Text="{i18n:Translate ui.settings_window.labels.grouping}" VerticalAlignment="Center" HorizontalAlignment="Left" Foreground="{DynamicResource ThemeForegroundBrush}" />
-			<ComboBox Name="groupingComboBox" ToolTip.Tip="{Binding ToolTip_Grouping}" Margin="10 10 0 0" Width="150" Background="{DynamicResource ThemeBackgroundBrush}" Foreground="{DynamicResource ThemeForegroundBrush}" BorderBrush="{DynamicResource HighlightBrush}" HorizontalAlignment="Left"/>
-		</StackPanel>
+				<StackPanel Grid.Row="2" Margin="10 10 0 0">
+					<TextBlock Text="{i18n:Translate ui.settings_window.labels.themes}" VerticalAlignment="Center" HorizontalAlignment="Left" Foreground="{DynamicResource ThemeForegroundBrush}" />
+					<ComboBox Name="themeComboBox" ToolTip.Tip="{Binding ToolTip_Theme}" Margin="10 10 0 10" Width="150" Background="{DynamicResource ThemeBackgroundBrush}" Foreground="{DynamicResource ThemeForegroundBrush}" BorderBrush="{DynamicResource HighlightBrush}" HorizontalAlignment="Left"/>
+					<TextBlock Text="{i18n:Translate ui.settings_window.labels.languages}" VerticalAlignment="Center" HorizontalAlignment="Left" Foreground="{DynamicResource ThemeForegroundBrush}" />
+					<ComboBox Name="languageComboBox" ToolTip.Tip="{Binding ToolTip_Language}" Margin="10 10 0 10" Width="150" Background="{DynamicResource ThemeBackgroundBrush}" Foreground="{DynamicResource ThemeForegroundBrush}" BorderBrush="{DynamicResource HighlightBrush}" HorizontalAlignment="Left"/>
+					<TextBlock Text="{i18n:Translate ui.settings_window.labels.grouping}" VerticalAlignment="Center" HorizontalAlignment="Left" Foreground="{DynamicResource ThemeForegroundBrush}" />
+					<ComboBox Name="groupingComboBox" ToolTip.Tip="{Binding ToolTip_Grouping}" Margin="10 10 0 0" Width="150" Background="{DynamicResource ThemeBackgroundBrush}" Foreground="{DynamicResource ThemeForegroundBrush}" BorderBrush="{DynamicResource HighlightBrush}" HorizontalAlignment="Left"/>
+				</StackPanel>
 
-		<StackPanel Grid.Row="3" Margin="10 25 0 0">
-			<TextBlock Text="{i18n:Translate ui.settings_window.labels.nexus}" VerticalAlignment="Center" HorizontalAlignment="Left" Foreground="{DynamicResource ThemeForegroundBrush}" />
-			<StackPanel Orientation="Horizontal" IsVisible="{Binding ShowNexusServers}">
-				<TextBlock Text="{i18n:Translate ui.settings_window.labels.preferred_server}" VerticalAlignment="Center" HorizontalAlignment="Left" Foreground="{DynamicResource ThemeForegroundBrush}" />
-				<ComboBox Name="preferredServerBox" ToolTip.Tip="{Binding ToolTip_PreferredServer}" Margin="10 10 0 10" Width="150" Background="{DynamicResource ThemeBackgroundBrush}" Foreground="{DynamicResource ThemeForegroundBrush}" BorderBrush="{DynamicResource HighlightBrush}" HorizontalAlignment="Left"/>
+				<StackPanel Grid.Row="3" Margin="10 25 0 0">
+					<TextBlock Text="{i18n:Translate ui.settings_window.labels.nexus}" VerticalAlignment="Center" HorizontalAlignment="Left" Foreground="{DynamicResource ThemeForegroundBrush}" />
+					<StackPanel Orientation="Horizontal" IsVisible="{Binding ShowNexusServers}">
+						<TextBlock Text="{i18n:Translate ui.settings_window.labels.preferred_server}" VerticalAlignment="Center" HorizontalAlignment="Left" Foreground="{DynamicResource ThemeForegroundBrush}" />
+						<ComboBox Name="preferredServerBox" ToolTip.Tip="{Binding ToolTip_PreferredServer}" Margin="10 10 0 10" Width="150" Background="{DynamicResource ThemeBackgroundBrush}" Foreground="{DynamicResource ThemeForegroundBrush}" BorderBrush="{DynamicResource HighlightBrush}" HorizontalAlignment="Left"/>
+					</StackPanel>
+					<Button Name="registerNXMButton" IsVisible="{Binding ShowNXMAssociationButton}" ToolTip.Tip="{Binding ToolTip_NXMAssociation}" Content="{i18n:Translate ui.settings_window.buttons.register_nxm_association}" Margin="0 5 0 10" BorderBrush="{DynamicResource HighlightBrush}" Foreground="{DynamicResource ThemeForegroundBrush}" Background="Transparent" HorizontalAlignment="Left"/>
+					<CheckBox Name="askBeforeNXMInstallCheckbox" IsChecked="{Binding IsAskingBeforeAcceptingNXM}" Content="{i18n:Translate ui.settings_window.buttons.always_ask_for_NXM_installs}" ToolTip.Tip="{Binding ToolTip_AlwaysAskNXMFiles}" VerticalAlignment="Center" HorizontalAlignment="Left" Foreground="{DynamicResource ThemeForegroundBrush}" />
+				</StackPanel>
+
+				<StackPanel Grid.Row="4" Margin="10 25 0 0">
+					<TextBlock Text="{i18n:Translate ui.settings_window.labels.miscellaneous}" VerticalAlignment="Center" HorizontalAlignment="Left" Foreground="{DynamicResource ThemeForegroundBrush}" />
+					<CheckBox Name="ignoreHiddenFoldersCheckbox" IsChecked="{Binding IgnoreHiddenFolders}" Content="{i18n:Translate ui.settings_window.buttons.ignore_hidden_folders}" ToolTip.Tip="{Binding ToolTip_IgnoreHiddenFolders}" VerticalAlignment="Center" HorizontalAlignment="Left" Foreground="{DynamicResource ThemeForegroundBrush}" />
+					<CheckBox Name="enableProfileSpecificModConfigsCheckbox" IsChecked="{Binding EnableProfileSpecificModConfigs}" Content="{i18n:Translate ui.settings_window.buttons.enable_profile_specific_mod_configs}" ToolTip.Tip="{Binding ToolTip_EnableProfileSpecificModConfigs}" VerticalAlignment="Center" HorizontalAlignment="Left" Foreground="{DynamicResource ThemeForegroundBrush}" />
+					<CheckBox Name="enableModsOnAdd" IsChecked="{Binding EnableModsOnAdd}" Content="{i18n:Translate ui.settings_window.buttons.enable_mods_on_add}" ToolTip.Tip="{Binding ToolTip_EnableModsOnAdd}" VerticalAlignment="Center" HorizontalAlignment="Left" Foreground="{DynamicResource ThemeForegroundBrush}" />
+					<CheckBox Name="alwaysAskToDelete" IsChecked="{Binding AlwaysAskToDelete}" Content="{i18n:Translate ui.settings_window.buttons.always_ask_to_delete}" ToolTip.Tip="{Binding ToolTip_AlwaysAskToDelete}" VerticalAlignment="Center" HorizontalAlignment="Left" Foreground="{DynamicResource ThemeForegroundBrush}" />
+					<CheckBox Name="automaticallySaveProfileChanges" IsChecked="{Binding ShouldAutomaticallySaveProfileChanges}" Content="{i18n:Translate ui.settings_window.buttons.automatically_save_profile_changes}" ToolTip.Tip="{Binding ToolTip_ShouldAutomaticallySaveProfileChanges}" VerticalAlignment="Center" HorizontalAlignment="Left" Foreground="{DynamicResource ThemeForegroundBrush}" />
+				</StackPanel>
 			</StackPanel>
-			<Button Name="registerNXMButton" IsVisible="{Binding ShowNXMAssociationButton}" ToolTip.Tip="{Binding ToolTip_NXMAssociation}" Content="{i18n:Translate ui.settings_window.buttons.register_nxm_association}" Margin="0 5 0 10" BorderBrush="{DynamicResource HighlightBrush}" Foreground="{DynamicResource ThemeForegroundBrush}" Background="Transparent" HorizontalAlignment="Left"/>
-			<CheckBox Name="askBeforeNXMInstallCheckbox" IsChecked="{Binding IsAskingBeforeAcceptingNXM}" Content="{i18n:Translate ui.settings_window.buttons.always_ask_for_NXM_installs}" ToolTip.Tip="{Binding ToolTip_AlwaysAskNXMFiles}" VerticalAlignment="Center" HorizontalAlignment="Left" Foreground="{DynamicResource ThemeForegroundBrush}" />
-		</StackPanel>
+		</ScrollViewer>
 
-		<StackPanel Grid.Row="4" Margin="10 25 0 0">
-			<TextBlock Text="{i18n:Translate ui.settings_window.labels.miscellaneous}" VerticalAlignment="Center" HorizontalAlignment="Left" Foreground="{DynamicResource ThemeForegroundBrush}" />
-			<CheckBox Name="ignoreHiddenFoldersCheckbox" IsChecked="{Binding IgnoreHiddenFolders}" Content="{i18n:Translate ui.settings_window.buttons.ignore_hidden_folders}" ToolTip.Tip="{Binding ToolTip_IgnoreHiddenFolders}" VerticalAlignment="Center" HorizontalAlignment="Left" Foreground="{DynamicResource ThemeForegroundBrush}" />
-			<CheckBox Name="enableProfileSpecificModConfigsCheckbox" IsChecked="{Binding EnableProfileSpecificModConfigs}" Content="{i18n:Translate ui.settings_window.buttons.enable_profile_specific_mod_configs}" ToolTip.Tip="{Binding ToolTip_EnableProfileSpecificModConfigs}" VerticalAlignment="Center" HorizontalAlignment="Left" Foreground="{DynamicResource ThemeForegroundBrush}" />
-			<CheckBox Name="enableModsOnAdd" IsChecked="{Binding EnableModsOnAdd}" Content="{i18n:Translate ui.settings_window.buttons.enable_mods_on_add}" ToolTip.Tip="{Binding ToolTip_EnableModsOnAdd}" VerticalAlignment="Center" HorizontalAlignment="Left" Foreground="{DynamicResource ThemeForegroundBrush}" />
-			<CheckBox Name="alwaysAskToDelete" IsChecked="{Binding AlwaysAskToDelete}" Content="{i18n:Translate ui.settings_window.buttons.always_ask_to_delete}" ToolTip.Tip="{Binding ToolTip_AlwaysAskToDelete}" VerticalAlignment="Center" HorizontalAlignment="Left" Foreground="{DynamicResource ThemeForegroundBrush}" />
-			<CheckBox Name="automaticallySaveProfileChanges" IsChecked="{Binding ShouldAutomaticallySaveProfileChanges}" Content="{i18n:Translate ui.settings_window.buttons.automatically_save_profile_changes}" ToolTip.Tip="{Binding ToolTip_ShouldAutomaticallySaveProfileChanges}" VerticalAlignment="Center" HorizontalAlignment="Left" Foreground="{DynamicResource ThemeForegroundBrush}" />
-		</StackPanel>
-
-		<DockPanel Grid.Row="5" Grid.Column="1" Margin="0 0 0 0">
+		<Border Grid.Row="5"  BorderBrush="{DynamicResource HighlightBrush}" BorderThickness="0 0 0 2" Grid.ColumnSpan="2"/>
+		<DockPanel Grid.Row="6" Grid.Column="1"  Margin="0 0 0 0">
 			<Button Name="applyButton" ToolTip.Tip="{Binding ToolTip_Save}" i:Attached.Icon="mdi-check" Margin="0 0 15 0" BorderBrush="{DynamicResource HighlightBrush}" Foreground="Green" Background="Transparent" HorizontalAlignment="Right"/>
 			<Button Name="cancelButton" IsCancel="True" ToolTip.Tip="{Binding ToolTip_Cancel}" i:Attached.Icon="mdi-cancel" Margin="0 0 15 0" BorderBrush="{DynamicResource HighlightBrush}" Foreground="Red" Background="Transparent" HorizontalAlignment="Right"/>
 		</DockPanel>
