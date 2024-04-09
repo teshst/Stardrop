@@ -72,7 +72,7 @@ namespace Stardrop.Views
                 Program.settings.Theme = themeName;
             };
 
-            // Handle Nexus Mods preferred server
+            // Handle NexusClient Mods preferred server
             var descriptionToServerEnum = new Dictionary<string, NexusServers>();
             foreach (NexusServers serverName in Enum.GetValues(typeof(NexusServers)))
             {

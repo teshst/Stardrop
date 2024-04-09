@@ -16,10 +16,9 @@ using System.Threading.Tasks;
 
 namespace Stardrop.Utilities.External
 {
-    public static class NexusClientFactory
+    public static class Nexus
     {
         private static readonly Uri _baseUrl = new Uri("https://api.nexusmods.com/v1/");
-        private static Nexus? _activeClient = null;
 
         public static string? GetCachedKey()
         {
@@ -46,15 +45,10 @@ namespace Stardrop.Utilities.External
             return null;
         }
 
-        public static async Task<Nexus?> GetClient(string apiKey)
+        public static async Task<NexusClient?> CreateClient(string apiKey)
         {            
-            // TODO: Force-refresh the client if we get a different API key? Gotta check against existing in that case...
-            if (_activeClient != null)
-            {
-                return _activeClient;
-            }
-
             HttpClient client = new HttpClient();
+            client.BaseAddress = _baseUrl;
             client.DefaultRequestHeaders.Add("apiKey", apiKey);
             client.DefaultRequestHeaders.Add("Application-Name", "Stardrop");
             client.DefaultRequestHeaders.Add("Application-Version", Program.ApplicationVersion);
@@ -97,8 +91,7 @@ namespace Stardrop.Utilities.External
                 Program.settings.NexusDetails.Username = validationModel.Name;
                 Program.settings.NexusDetails.IsPremium = validationModel.IsPremium;
 
-                _activeClient = new Nexus(Program.settings.NexusDetails, client, response.Headers);
-                return _activeClient;
+                return new NexusClient(Program.settings.NexusDetails, client, response.Headers);
             }
             catch (Exception ex)
             {
@@ -108,20 +101,21 @@ namespace Stardrop.Utilities.External
         }
     }
 
-    public class Nexus
+    public class NexusClient
     {
         private const string _nxmPattern = @"nxm:\/\/(?<domain>stardewvalley)\/mods\/(?<mod>[0-9]+)\/files\/(?<file>[0-9]+)\?key=(?<key>.*)&expires=(?<expiry>[0-9]+)&user_id=(?<user>[0-9]+)";
 
         private readonly HttpClient _client;
         private readonly NexusUser _settings;
 
-        private int _dailyRequestsRemaining;
-        private int _dailyRequestsLimit;
+        internal int DailyRequestsLimit { get; private set; }
+        internal int DailyRequestsRemaining { get; private set; }
+        internal event EventHandler DailyRequestLimitsChanged;
 
         // TODO: Replace with event handler, or messaging, or something.
         //private MainWindowViewModel _displayModel;
 
-        public Nexus(NexusUser settings, HttpClient client, HttpResponseHeaders initialValidateResponseHeaders)
+        public NexusClient(NexusUser settings, HttpClient client, HttpResponseHeaders initialValidateResponseHeaders)
         {
             _settings = settings;
             _client = client;
@@ -143,7 +137,7 @@ namespace Stardrop.Utilities.External
 
             try
             {
-                var response = await _client.GetAsync(new Uri($"games/stardewvalley/mods/{modId}.json"));
+                var response = await _client.GetAsync($"games/stardewvalley/mods/{modId}.json");
                 if (response.StatusCode == System.Net.HttpStatusCode.OK && response.Content is not null)
                 {
                     string content = await response.Content.ReadAsStringAsync();
@@ -185,7 +179,7 @@ namespace Stardrop.Utilities.External
             return null;
         }
 
-        public async Task<ModFile?> GetFileByVersion(string apiKey, int modId, string version, string? modFlag = null)
+        public async Task<ModFile?> GetFileByVersion(int modId, string version, string? modFlag = null)
         {
             if (SemVersion.TryParse(version.Replace("v", String.Empty), SemVersionStyles.Any, out var targetVersion) is false)
             {
@@ -197,7 +191,7 @@ namespace Stardrop.Utilities.External
 
             try
             {
-                var response = await _client.GetAsync(new Uri($"games/stardewvalley/mods/{modId}/files.json"));
+                var response = await _client.GetAsync($"games/stardewvalley/mods/{modId}/files.json");
                 if (response.StatusCode == System.Net.HttpStatusCode.OK && response.Content is not null)
                 {
                     string content = await response.Content.ReadAsStringAsync();
@@ -257,7 +251,7 @@ namespace Stardrop.Utilities.External
             return null;
         }
 
-        public async Task<string?> GetFileDownloadLink(string apiKey, NXM nxmData, string? serverName = null)
+        public async Task<string?> GetFileDownloadLink(NXM nxmData, string? serverName = null)
         {
             if (nxmData.Link is null)
             {
@@ -270,12 +264,12 @@ namespace Stardrop.Utilities.External
                 return null;
             }
 
-            return await GetFileDownloadLink(apiKey, modId, fileId, match.Groups["key"].ToString(), match.Groups["expiry"].ToString(), serverName);
+            return await GetFileDownloadLink(modId, fileId, match.Groups["key"].ToString(), match.Groups["expiry"].ToString(), serverName);
         }
 
-        public async Task<string?> GetFileDownloadLink(string apiKey, int modId, int fileId, string? nxmKey = null, string? nxmExpiry = null, string? serverName = null)
+        public async Task<string?> GetFileDownloadLink(int modId, int fileId, string? nxmKey = null, string? nxmExpiry = null, string? serverName = null)
         {
-            if (String.IsNullOrEmpty(serverName) || Program.settings.NexusDetails.IsPremium is false)
+            if (String.IsNullOrEmpty(serverName) || _settings.IsPremium is false)
             {
                 serverName = "Nexus CDN";
             }
@@ -337,16 +331,9 @@ namespace Stardrop.Utilities.External
 
         public async Task<string?> DownloadFileAndGetPath(string uri, string fileName)
         {
-            // Create a throwaway client
-            // TODO: Investigate if we truly don't need ApiKey here. If so, remove it from DefaultRequestHeaders
-            HttpClient client = new HttpClient();
-            client.DefaultRequestHeaders.Add("Application-Name", "Stardrop");
-            client.DefaultRequestHeaders.Add("Application-Version", Program.ApplicationVersion);
-            client.DefaultRequestHeaders.Add("User-Agent", $"Stardrop/{Program.ApplicationVersion} {Environment.OSVersion}");
-
             try
             {
-                var stream = await client.GetStreamAsync(new Uri(uri));
+                var stream = await _client.GetStreamAsync(new Uri(uri));
                 using (var fileStream = new FileStream(Path.Combine(Pathing.GetNexusPath(), fileName), FileMode.CreateNew))
                 {
                     await stream.CopyToAsync(fileStream);
@@ -357,17 +344,16 @@ namespace Stardrop.Utilities.External
             catch (Exception ex)
             {
                 Program.helper.Log($"Failed to download mod file for Nexus Mods: {ex}", Helper.Status.Alert);
-            }
-            client.Dispose();
+            }            
 
             return null;
         }
 
-        public async Task<List<Endorsement>> GetEndorsements(string apiKey)
+        public async Task<List<Endorsement>> GetEndorsements()
         {
             try
             {
-                var response = await _client.GetAsync(new Uri($"user/endorsements"));
+                var response = await _client.GetAsync($"user/endorsements");
                 if (response.StatusCode == System.Net.HttpStatusCode.OK && response.Content is not null)
                 {
                     string content = await response.Content.ReadAsStringAsync();
@@ -412,12 +398,12 @@ namespace Stardrop.Utilities.External
         }
 
 
-        public async Task<EndorsementResponse> SetModEndorsement(string apiKey, int modId, bool isEndorsed)
+        public async Task<EndorsementResponse> SetModEndorsement(int modId, bool isEndorsed)
         {
             try
             {
                 var requestPackage = new StringContent("{\"Version\":\"1.0.0\"}", Encoding.UTF8, "application/json");
-                var response = await _client.PostAsync(new Uri($"games/stardewvalley/mods/{modId}/{(isEndorsed is true ? "endorse.json" : "abstain.json")}"), requestPackage);
+                var response = await _client.PostAsync($"games/stardewvalley/mods/{modId}/{(isEndorsed is true ? "endorse.json" : "abstain.json")}", requestPackage);
                 if (response.Content is not null)
                 {
                     string content = await response.Content.ReadAsStringAsync();
@@ -477,16 +463,15 @@ namespace Stardrop.Utilities.External
         {
             if (headers.TryGetValues("x-rl-daily-limit", out var limitValues) && Int32.TryParse(limitValues.First(), out int dailyLimit))
             {
-                _dailyRequestsLimit = dailyLimit;
+                DailyRequestsLimit = dailyLimit;
             }
 
             if (headers.TryGetValues("x-rl-daily-remaining", out var remainingValues) && Int32.TryParse(remainingValues.First(), out int dailyRemaining))
             {
-                _dailyRequestsRemaining = dailyRemaining;
+                DailyRequestsRemaining = dailyRemaining;
             }
 
-           // TODO: Fire event or something
-            //_displayModel.NexusLimits = $"(Remaining Daily Requests: {_dailyRequestsRemaining}) ";
+            DailyRequestLimitsChanged?.Invoke(this, EventArgs.Empty);
         }
     }
 }

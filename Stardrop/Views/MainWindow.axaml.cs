@@ -138,8 +138,7 @@ namespace Stardrop.Views
                 CheckForModUpdates(_viewModel.Mods.ToList(), probe: true);
             }
 
-            // Check if we have a valid Nexus Mods key
-            Nexus.SetDisplayWindow(_viewModel);
+            // Check if we have a valid NexusClient Mods key            
             CheckForNexusConnection();
 
             // Start sentinel for watching NXM files
@@ -327,20 +326,13 @@ namespace Stardrop.Views
                 await HandleSMAPIUpdateCheck(false);
             }
 
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) && NXMProtocol.Validate(Program.executablePath) is false && await Nexus.ValidateKey(Nexus.GetKey()))
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) && NXMProtocol.Validate(Program.executablePath) is false)
             {
-                var requestWindow = new MessageWindow(Program.translation.Get("ui.message.confirm_nxm_association"));
-                if (await requestWindow.ShowDialog<bool>(this))
-                {
-                    if (NXMProtocol.Register(Program.executablePath) is false)
-                    {
-                        await new WarningWindow(Program.translation.Get("ui.warning.failed_to_set_association"), Program.translation.Get("internal.ok")).ShowDialog(this);
-                    }
-                }
+                await VerifyNxmProtocol();
             }
             else if (String.IsNullOrEmpty(Program.nxmLink) is false)
             {
-                await ProcessNXMLink(Nexus.GetKey(), new NXM() { Link = Program.nxmLink, Timestamp = DateTime.Now });
+                await ProcessNXMLink(_viewModel.NexusClient, new NXM() { Link = Program.nxmLink, Timestamp = DateTime.Now });
                 Program.nxmLink = null;
             }
         }
@@ -371,7 +363,7 @@ namespace Stardrop.Views
             await GetCachedModUpdates(_viewModel.Mods.ToList(), skipCacheCheck: true);
 
             _viewModel.EvaluateRequirements();
-            _viewModel.UpdateEndorsements(Nexus.GetKey());
+            _viewModel.UpdateEndorsements();
             _viewModel.UpdateFilter();
 
             _viewModel.DragOverColor = "#ff9f2a";
@@ -406,7 +398,6 @@ namespace Stardrop.Views
 
             try
             {
-                var apiKey = Nexus.GetKey();
                 var nxmLinks = new List<NXM>();
 
                 // Gather the NXM links, then clear the file
@@ -426,7 +417,7 @@ namespace Stardrop.Views
                 // Process each link
                 foreach (var nxmLink in nxmLinks)
                 {
-                    if (await ProcessNXMLink(apiKey, nxmLink) is false)
+                    if (await ProcessNXMLink(_viewModel.NexusClient, nxmLink) is false)
                     {
                         break;
                     }
@@ -801,8 +792,7 @@ namespace Stardrop.Views
                 return;
             }
 
-            var apiKey = Nexus.GetKey();
-            if (String.IsNullOrEmpty(apiKey))
+            if (_viewModel.NexusClient is null)
             {
                 return;
             }
@@ -816,7 +806,7 @@ namespace Stardrop.Views
             int modId = (int)clickedMod.NexusModId;
 
             bool targetState = !clickedMod.IsEndorsed;
-            var result = await Nexus.SetModEndorsement(apiKey, modId, targetState);
+            var result = await _viewModel.NexusClient.SetModEndorsement(modId, targetState);
             if (result == EndorsementResponse.Endorsed || result == EndorsementResponse.Abstained)
             {
                 _viewModel.Mods.First(m => m.NexusModId == modId).IsEndorsed = targetState;
@@ -855,10 +845,9 @@ namespace Stardrop.Views
             {
                 return;
             }
-            var apiKey = Nexus.GetKey();
 
             // Install the mod
-            var downloadedFilePath = await InstallModViaNexus(apiKey, clickedMod);
+            var downloadedFilePath = await InstallModViaNexus(_viewModel.NexusClient, clickedMod);
             if (String.IsNullOrEmpty(downloadedFilePath))
             {
                 return;
@@ -875,7 +864,7 @@ namespace Stardrop.Views
             }
 
             _viewModel.EvaluateRequirements();
-            _viewModel.UpdateEndorsements(apiKey);
+            _viewModel.UpdateEndorsements();
             _viewModel.UpdateFilter();
         }
 
@@ -1222,7 +1211,7 @@ namespace Stardrop.Views
             await GetCachedModUpdates(_viewModel.Mods.ToList(), skipCacheCheck: true);
 
             _viewModel.EvaluateRequirements();
-            _viewModel.UpdateEndorsements(Nexus.GetKey());
+            _viewModel.UpdateEndorsements();
             _viewModel.UpdateFilter();
         }
 
@@ -1514,8 +1503,8 @@ namespace Stardrop.Views
 
         private async Task HandleBulkModInstall()
         {
-            var apiKey = Nexus.GetKey();
-            if (String.IsNullOrEmpty(apiKey))
+            var client = _viewModel.NexusClient;
+            if (client is null)
             {
                 return;
             }
@@ -1534,7 +1523,7 @@ namespace Stardrop.Views
             List<string> updateFilePaths = new List<string>();
             foreach (var mod in _viewModel.Mods.Where(m => String.IsNullOrEmpty(m.InstallStatus) is false))
             {
-                var downloadFilePath = await InstallModViaNexus(apiKey, mod);
+                var downloadFilePath = await InstallModViaNexus(client, mod);
 
                 if (String.IsNullOrEmpty(downloadFilePath))
                 {
@@ -1554,29 +1543,33 @@ namespace Stardrop.Views
             }
 
             _viewModel.EvaluateRequirements();
-            _viewModel.UpdateEndorsements(apiKey);
+            _viewModel.UpdateEndorsements();
             _viewModel.UpdateFilter();
         }
 
+        // TODO: This is the handler for clicking on the hyperlink button
+        // We need to extra *part* of this (e.g. the client-createy part) out into
+        // something that can be safely called in lots of places
         private async Task HandleNexusConnection()
         {
-            if (String.IsNullOrEmpty(Nexus.GetKey()) || File.Exists(Pathing.GetNotionCachePath()) is false)
+            string? apiKey = Nexus.GetCachedKey();
+            if (String.IsNullOrEmpty(apiKey) || File.Exists(Pathing.GetNotionCachePath()) is false)
             {
                 // Display the login window
                 var loginWindow = new NexusLogin(_viewModel);
                 loginWindow.WindowStartupLocation = WindowStartupLocation.CenterOwner;
-                var apiKey = await loginWindow.ShowDialog<string>(this);
+                apiKey = await loginWindow.ShowDialog<string>(this);
 
                 if (String.IsNullOrEmpty(apiKey))
                 {
                     return;
                 }
 
-                // Attempt to validate the API key
-                var isKeyValid = await Nexus.ValidateKey(apiKey);
-                if (isKeyValid is false)
+                // Attempt to create a new client for communicating with Nexus
+                NexusClient? nexusClient = await Nexus.CreateClient(apiKey);
+                if (nexusClient is null)
                 {
-                    // Failed to validate, warn the user
+                    // Failed to create, warn the user
                     await CreateWarningWindow(Program.translation.Get("ui.warning.unable_to_validate_nexus_key"), Program.translation.Get("internal.ok"));
                     return;
                 }
@@ -1588,23 +1581,18 @@ namespace Stardrop.Views
                 // Cache the required data
                 File.WriteAllText(Pathing.GetNotionCachePath(), JsonSerializer.Serialize(new PairedKeys { Lock = obscurer.Key, Vector = obscurer.Vector }, new JsonSerializerOptions() { WriteIndented = true }));
 
-                // Set the status
+                // Set the status, and store the created client
                 _viewModel.NexusStatus = Program.translation.Get("internal.connected");
+                _viewModel.NexusClient = nexusClient;
+                _viewModel.NexusClient.DailyRequestLimitsChanged += OnNexusDailyLimitsChanged;
 
-                // Update any required Nexus Mods related components
+                // Update any required NexusClient Mods related components
                 CheckForNexusConnection();
 
                 // Verify NXM protocol usage
-                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) && NXMProtocol.Validate(Program.executablePath) is false && await Nexus.ValidateKey(apiKey))
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) && NXMProtocol.Validate(Program.executablePath) is false)
                 {
-                    var requestWindow = new MessageWindow(Program.translation.Get("ui.message.confirm_nxm_association"));
-                    if (await requestWindow.ShowDialog<bool>(this))
-                    {
-                        if (NXMProtocol.Register(Program.executablePath) is false)
-                        {
-                            await new WarningWindow(Program.translation.Get("ui.warning.failed_to_set_association"), Program.translation.Get("internal.ok")).ShowDialog(this);
-                        }
-                    }
+                    await VerifyNxmProtocol();
                 }
 
                 return;
@@ -1618,6 +1606,18 @@ namespace Stardrop.Views
                 _viewModel.NexusStatus = Program.translation.Get("internal.disconnected");
                 _viewModel.ShowEndorsements = false;
                 _viewModel.ShowInstalls = false;
+            }
+        }
+
+        private async Task VerifyNxmProtocol()
+        {
+            var requestWindow = new MessageWindow(Program.translation.Get("ui.message.confirm_nxm_association"));
+            if (await requestWindow.ShowDialog<bool>(this))
+            {
+                if (NXMProtocol.Register(Program.executablePath) is false)
+                {
+                    await new WarningWindow(Program.translation.Get("ui.warning.failed_to_set_association"), Program.translation.Get("internal.ok")).ShowDialog(this);
+                }
             }
         }
 
@@ -1635,19 +1635,27 @@ namespace Stardrop.Views
             // Evaluate mod requirements
             _viewModel.EvaluateRequirements();
 
-            // Check for Nexus Mods connection perform related tasks
+            // Check for NexusClient Mods connection perform related tasks
             CheckForNexusConnection();
 
             // Hide the required mods
             _viewModel.HideRequiredMods();
         }
 
-        internal async Task<bool> ProcessNXMLink(string? apiKey, NXM nxmLink)
+        internal async Task<bool> ProcessNXMLink(NexusClient? client, NXM nxmLink)
         {
-            if (String.IsNullOrEmpty(apiKey))
+            if (client is null)
             {
-                await CreateWarningWindow(Program.translation.Get("ui.message.require_nexus_login"), Program.translation.Get("internal.ok"));
-                return false;
+                // Do a hail-mary check to see if we have a stored client on the ViewModel before giving up entirely
+                if (_viewModel.NexusClient is null)
+                {
+                    await CreateWarningWindow(Program.translation.Get("ui.message.require_nexus_login"), Program.translation.Get("internal.ok"));
+                    return false;
+                }
+                else
+                {
+                    client = _viewModel.NexusClient;
+                }
             }
 
             if (await ValidateSMAPIPath() is false)
@@ -1656,7 +1664,7 @@ namespace Stardrop.Views
             }
 
             Program.helper.Log($"Processing NXM link: {nxmLink.Link}");
-            var processedDownloadLink = await Nexus.GetFileDownloadLink(apiKey, nxmLink, EnumParser.GetDescription(Program.settings.PreferredNexusServer));
+            var processedDownloadLink = await client.GetFileDownloadLink(nxmLink, EnumParser.GetDescription(Program.settings.PreferredNexusServer));
             Program.helper.Log($"Processed link: {processedDownloadLink}");
 
             if (String.IsNullOrEmpty(processedDownloadLink))
@@ -1666,7 +1674,7 @@ namespace Stardrop.Views
             }
 
             // Get the mod details
-            var modDetails = await Nexus.GetModDetailsViaNXM(apiKey, nxmLink);
+            var modDetails = await client.GetModDetailsViaNXM(nxmLink);
             if (modDetails is null || String.IsNullOrEmpty(modDetails.Name))
             {
                 await CreateWarningWindow(String.Format(Program.translation.Get("ui.warning.failed_to_get_mod_details"), nxmLink.Link), Program.translation.Get("internal.ok"));
@@ -1676,7 +1684,7 @@ namespace Stardrop.Views
             var requestWindow = new MessageWindow(String.Format(Program.translation.Get("ui.message.confirm_nxm_install"), modDetails.Name));
             if (Program.settings.IsAskingBeforeAcceptingNXM is false || await requestWindow.ShowDialog<bool>(this))
             {
-                var downloadedFilePath = await Nexus.DownloadFileAndGetPath(processedDownloadLink, modDetails.Name);
+                var downloadedFilePath = await client.DownloadFileAndGetPath(processedDownloadLink, modDetails.Name);
                 if (downloadedFilePath is null)
                 {
                     await CreateWarningWindow(String.Format(Program.translation.Get("ui.warning.failed_nexus_install"), modDetails.Name), Program.translation.Get("internal.ok"));
@@ -1694,7 +1702,7 @@ namespace Stardrop.Views
                 }
 
                 _viewModel.EvaluateRequirements();
-                _viewModel.UpdateEndorsements(apiKey);
+                _viewModel.UpdateEndorsements();
                 _viewModel.UpdateFilter();
 
                 // Let the user know that the mod was installed via NXM
@@ -1977,25 +1985,24 @@ namespace Stardrop.Views
             _viewModel.IsCheckingForUpdates = false;
         }
 
-        private async void CheckForNexusConnection()
+        private async Task CheckForNexusConnection()
         {
-            var apiKey = Nexus.GetKey();
-            Program.helper.Log($"Attempting to check for Nexus Mods connection (Has Key: {string.IsNullOrEmpty(apiKey) is false})");
+            // Create the client, and open access to Nexus if we haven't already done it
+            await OpenInitialNexusConnection();
 
-            if (String.IsNullOrEmpty(apiKey) is false && await Nexus.ValidateKey(apiKey))
+            if (_viewModel.NexusClient is not null)
             {
-                Program.helper.Log($"Nexus Mods connection established.");
-
+                // TODO: The old logic called /validate here. Should we do the same?
                 _viewModel.NexusStatus = Program.translation.Get("internal.connected");
-                _viewModel.NexusLimits = $"(Remaining Daily Requests: {Nexus.dailyRequestsRemaining}) ";
+                _viewModel.NexusLimits = $"(Remaining Daily Requests: {_viewModel.NexusClient.DailyRequestsRemaining}) ";
 
                 // Gather any endorsements
-                _viewModel.UpdateEndorsements(apiKey);
+                _viewModel.UpdateEndorsements();
 
                 // Show endorsements
                 _viewModel.ShowEndorsements = true;
 
-                // Show Nexus mod download column, if user is premium
+                // Show NexusClient mod download column, if user is premium
                 _viewModel.ShowInstalls = Program.settings.NexusDetails.IsPremium;
             }
             else
@@ -2007,6 +2014,41 @@ namespace Stardrop.Views
                 _viewModel.NexusStatus = Program.translation.Get("internal.disconnected");
                 _viewModel.ShowEndorsements = false;
                 _viewModel.ShowInstalls = false;
+            }
+        }
+
+        private async Task OpenInitialNexusConnection()
+        {
+            if (_viewModel.NexusClient is not null)
+            {
+                return;
+            }
+
+            string? apiKey = Nexus.GetCachedKey();
+            if (apiKey is not null)
+            {
+                NexusClient? nexusClient = await Nexus.CreateClient(apiKey);
+                if (nexusClient is not null)
+                {
+                    // Store the created client                    
+                    _viewModel.NexusClient = nexusClient;
+                    _viewModel.NexusClient.DailyRequestLimitsChanged += OnNexusDailyLimitsChanged;
+
+                    // Verify NXM protocol usage
+                    if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) && NXMProtocol.Validate(Program.executablePath) is false)
+                    {
+                        await VerifyNxmProtocol();
+                    }
+                }
+            }
+        }
+
+        private void OnNexusDailyLimitsChanged(object? sender, EventArgs e)
+        {
+            if (_viewModel.NexusClient is not null)
+            {
+                _viewModel.NexusStatus = Program.translation.Get("internal.connected");
+                _viewModel.NexusLimits = $"(Remaining Daily Requests: {_viewModel.NexusClient.DailyRequestsRemaining}) ";
             }
         }
 
@@ -2069,7 +2111,7 @@ namespace Stardrop.Views
             _viewModel.EnabledModCount = _viewModel.Mods.Where(m => m.IsEnabled && !m.IsHidden).Count();
         }
 
-        private async Task<string?> InstallModViaNexus(string apiKey, Mod mod)
+        private async Task<string?> InstallModViaNexus(NexusClient? client, Mod mod)
         {
             if (mod is null || mod.InstallState != InstallState.Unknown)
             {
@@ -2077,14 +2119,14 @@ namespace Stardrop.Views
             }
 
             var modId = mod.GetNexusId();
-            if (modId is null || String.IsNullOrEmpty(apiKey))
+            if (modId is null || client is null)
             {
                 await CreateWarningWindow(String.Format(Program.translation.Get("ui.warning.unable_nexus_install"), mod.Name), Program.translation.Get("internal.ok"));
                 return null;
             }
             mod.InstallState = InstallState.Downloading;
 
-            var modFile = await Nexus.GetFileByVersion(apiKey, (int)modId, mod.SuggestedVersion, modFlag: mod.GetNexusFlag());
+            var modFile = await client.GetFileByVersion(modId.Value, mod.SuggestedVersion, modFlag: mod.GetNexusFlag());
             if (modFile is null)
             {
                 await CreateWarningWindow(String.Format(Program.translation.Get("ui.warning.failed_nexus_install"), mod.Name), Program.translation.Get("internal.ok"));
@@ -2092,7 +2134,7 @@ namespace Stardrop.Views
                 return null;
             }
 
-            var modDownloadLink = await Nexus.GetFileDownloadLink(apiKey, (int)modId, modFile.Id, serverName: EnumParser.GetDescription(Program.settings.PreferredNexusServer));
+            var modDownloadLink = await client.GetFileDownloadLink(modId.Value, modFile.Id, serverName: EnumParser.GetDescription(Program.settings.PreferredNexusServer));
             if (modDownloadLink is null)
             {
                 await CreateWarningWindow(String.Format(Program.translation.Get("ui.warning.failed_nexus_install"), mod.Name), Program.translation.Get("internal.ok"));
@@ -2100,7 +2142,7 @@ namespace Stardrop.Views
                 return null;
             }
 
-            var downloadedFilePath = await Nexus.DownloadFileAndGetPath(modDownloadLink, modFile.Name);
+            var downloadedFilePath = await client.DownloadFileAndGetPath(modDownloadLink, modFile.Name);
             if (downloadedFilePath is null)
             {
                 await CreateWarningWindow(String.Format(Program.translation.Get("ui.warning.failed_nexus_install"), mod.Name), Program.translation.Get("internal.ok"));

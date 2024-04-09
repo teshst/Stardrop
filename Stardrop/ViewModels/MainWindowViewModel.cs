@@ -74,6 +74,8 @@ namespace Stardrop.ViewModels
         private bool _showSaveProfileChanges;
         public bool AreModGroupsEnabled { get { return Program.settings.ModGroupingMethod != ModGrouping.None; } }
 
+        public NexusClient? NexusClient { get; set; }
+
         public MainWindowViewModel(string modsFilePath, string version)
         {
             DiscoverMods(modsFilePath);
@@ -533,14 +535,14 @@ namespace Stardrop.ViewModels
             return pendingConfigUpdates;
         }
 
-        internal async void UpdateEndorsements(string? apiKey)
+        internal async void UpdateEndorsements()
         {
-            if (String.IsNullOrEmpty(apiKey))
+            if (NexusClient is null)
             {
                 return;
             }
 
-            var endorsements = await Nexus.GetEndorsements(apiKey);
+            var endorsements = await NexusClient.GetEndorsements();
             foreach (var mod in Mods.Where(m => m.HasUpdateKeys() && endorsements.Any(e => e.Id == m.NexusModId)))
             {
                 mod.IsEndorsed = endorsements.First(e => e.Id == mod.NexusModId).IsEndorsed();

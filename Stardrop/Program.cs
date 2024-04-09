@@ -122,13 +122,13 @@ namespace Stardrop
                     settings.ModInstallPath = Path.Combine(Pathing.defaultModPath, "Stardrop Installed Mods");
                 }
 
-                // Set the default Nexus Mods information
+                // Set the default NexusClient Mods information
                 if (settings.NexusDetails is null)
                 {
                     settings.NexusDetails = new NexusUser();
                 }
 
-                // Delete any files underneath the Nexus folder
+                // Delete any files underneath the NexusClient folder
                 var nexusDirectory = new DirectoryInfo(Pathing.GetNexusPath());
                 foreach (FileInfo file in nexusDirectory.GetFiles())
                 {
