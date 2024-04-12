@@ -1563,7 +1563,7 @@ namespace Stardrop.Views
                     }
                 }
 
-                await OpenInitialNexusConnection(apiKey);           
+                await SetupNexusConnection(apiKey);           
                 if (Nexus.Client is null)
                 {
                     // Failed to create, warn the user
@@ -1970,7 +1970,7 @@ namespace Stardrop.Views
         private async Task CheckForNexusConnection()
         {
             // Create the client, and open access to Nexus if we haven't already done it
-            await OpenInitialNexusConnection(Nexus.GetCachedKey());
+            await SetupNexusConnection(Nexus.GetCachedKey());
 
             if (Nexus.Client is null)
             {
@@ -2003,7 +2003,7 @@ namespace Stardrop.Views
             }
         }
 
-        private async Task OpenInitialNexusConnection(string? apiKey)
+        private async Task SetupNexusConnection(string? apiKey)
         {
             if (apiKey is null)
             {

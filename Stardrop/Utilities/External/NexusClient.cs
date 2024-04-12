@@ -12,6 +12,7 @@ using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Stardrop.Utilities.External
@@ -96,6 +97,7 @@ namespace Stardrop.Utilities.External
         internal int DailyRequestsLimit { get; private set; }
         internal int DailyRequestsRemaining { get; private set; }
         internal event EventHandler? DailyRequestLimitsChanged = null;
+        internal event EventHandler<ModDownloadStartedEventArgs>? DownloadStarted = null;
 
         public NexusClient(HttpClient client)
         {
@@ -368,12 +370,40 @@ namespace Stardrop.Utilities.External
         public async Task<string?> DownloadFileAndGetPath(string uri, string fileName)
         {
             try
-            {
-                // TODO: Rework this so that it reports completion via events so that the DownloadWindow can watch it
-                var stream = await _client.GetStreamAsync(new Uri(uri));
-                using (var fileStream = new FileStream(Path.Combine(Pathing.GetNexusPath(), fileName), FileMode.CreateNew))
+            {                
+                var downloadCancellationSource = new CancellationTokenSource();
+                var requestMessage = new HttpRequestMessage(HttpMethod.Get, new Uri(uri));
+                var response = await _client.SendAsync(requestMessage, HttpCompletionOption.ResponseHeadersRead, downloadCancellationSource.Token);                
+                if (response.IsSuccessStatusCode is false)
                 {
-                    await stream.CopyToAsync(fileStream);
+                    Program.helper.Log($"Failed to download mod file for Nexus Mods: HTTP {response.StatusCode}, {response.ReasonPhrase}", Helper.Status.Alert);
+                    return null;
+                }                
+
+                long? contentLength = response.Content.Headers.ContentLength;                                
+                if (contentLength.HasValue is false || contentLength.Value == 0)
+                {
+                    // TODO: send some event that just notes that a download is ongoing,
+                    // then do a basic stream.copyToAsync().
+                    // Once it's done, fire a download completion event
+                }
+                else
+                {
+                    DownloadStarted?.Invoke(this, new ModDownloadStartedEventArgs(new Uri(uri), fileName, contentLength, downloadCancellationSource.Token));
+                    using (var fileStream = new FileStream(Path.Combine(Pathing.GetNexusPath(), fileName), FileMode.CreateNew))
+                    using (var stream = await response.Content.ReadAsStreamAsync())
+                    {
+                        var buffer = new byte[81920];
+                        long totalBytesRead = 0;
+                        int bytesRead;
+                        while ((bytesRead = await stream.ReadAsync(buffer, 0, buffer.Length, downloadCancellationSource.Token)) != 0)
+                        {
+                            await fileStream.WriteAsync(buffer, 0, bytesRead, downloadCancellationSource.Token);
+                            totalBytesRead += bytesRead;
+                            // TODO: Fire a download progress report event
+                        }
+                    }
+                    // TODO: Fire a download completion event
                 }
 
                 return Path.Combine(Pathing.GetNexusPath(), fileName);
@@ -381,9 +411,9 @@ namespace Stardrop.Utilities.External
             catch (Exception ex)
             {
                 Program.helper.Log($"Failed to download mod file for Nexus Mods: {ex}", Helper.Status.Alert);
+                // TODO: Fire a download failed event
+                return null;
             }            
-
-            return null;
         }
 
         public async Task<List<Endorsement>> GetEndorsements()
