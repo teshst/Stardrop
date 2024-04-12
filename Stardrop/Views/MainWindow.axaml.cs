@@ -138,9 +138,6 @@ namespace Stardrop.Views
                 CheckForModUpdates(_viewModel.Mods.ToList(), probe: true);
             }
 
-            // Check if we have a valid NexusClient Mods key            
-            CheckForNexusConnection();
-
             // Start sentinel for watching NXM files
             if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX) is false)
             {
@@ -326,11 +323,11 @@ namespace Stardrop.Views
                 await HandleSMAPIUpdateCheck(false);
             }
 
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) && NXMProtocol.Validate(Program.executablePath) is false)
-            {
-                await VerifyNxmProtocol();
-            }
-            else if (String.IsNullOrEmpty(Program.nxmLink) is false)
+
+            // Set up the Nexus Mods connection, and attempt to register for the NXM URI protocol
+            await CheckForNexusConnection();
+
+            if (String.IsNullOrEmpty(Program.nxmLink) is false)
             {
                 await ProcessNXMLink(new NXM() { Link = Program.nxmLink, Timestamp = DateTime.Now });
                 Program.nxmLink = null;
