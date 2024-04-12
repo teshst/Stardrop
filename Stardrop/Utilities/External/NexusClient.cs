@@ -20,6 +20,13 @@ namespace Stardrop.Utilities.External
     {
         private static readonly Uri _baseUrl = new Uri("https://api.nexusmods.com/v1/");
 
+        public static NexusClient? Client { get; private set; }
+
+        /// <summary>
+        /// If the user has entered their Nexus API key in a previous session, this will attempt to retreive
+        /// it.
+        /// </summary>
+        /// <returns>The key, if it exists. Null otherwise.</returns>
         public static string? GetCachedKey()
         {
             if (Program.settings.NexusDetails?.Key is null || File.Exists(Pathing.GetNotionCachePath()) is false)
@@ -45,6 +52,13 @@ namespace Stardrop.Utilities.External
             return null;
         }
 
+        /// <summary>
+        /// Creates a new HttpClient configured with a Nexus API key, and validates it against the Nexus API.
+        /// If successfully validated, sets <see cref="Client"/>, as well as returning a reference to it.
+        /// If called when a <see cref="Client"/> is already set, the Client will be replaced.
+        /// </summary>
+        /// <param name="apiKey">The API key from Nexus mods that will be included in the 'apiKey' header when making calls.</param>
+        /// <returns>The created client, if successful. Null otherwise.</returns>
         public static async Task<NexusClient?> CreateClient(string apiKey)
         {            
             HttpClient client = new HttpClient();
@@ -53,10 +67,51 @@ namespace Stardrop.Utilities.External
             client.DefaultRequestHeaders.Add("Application-Name", "Stardrop");
             client.DefaultRequestHeaders.Add("Application-Version", Program.ApplicationVersion);
             client.DefaultRequestHeaders.Add("User-Agent", $"Stardrop/{Program.ApplicationVersion} {Environment.OSVersion}");
-            
+
+            var nexusClient = new NexusClient(client);
+
+            bool isKeyValid = await nexusClient.ValidateKey();
+            if (isKeyValid is false)
+            {
+                return null;
+            }
+
+            Client = nexusClient;
+            return Client;
+        }
+
+        /// <summary>
+        /// Nulls out the <see cref="Client"/>.
+        /// </summary>
+        public static void ClearClient() => Client = null;        
+    }
+
+    public class NexusClient
+    {
+        private const string _nxmPattern = @"nxm:\/\/(?<domain>stardewvalley)\/mods\/(?<mod>[0-9]+)\/files\/(?<file>[0-9]+)\?key=(?<key>.*)&expires=(?<expiry>[0-9]+)&user_id=(?<user>[0-9]+)";
+
+        private readonly HttpClient _client;
+        private NexusUser _settings = null!;
+
+        internal int DailyRequestsLimit { get; private set; }
+        internal int DailyRequestsRemaining { get; private set; }
+        internal event EventHandler? DailyRequestLimitsChanged = null;
+
+        public NexusClient(HttpClient client)
+        {
+            _client = client;
+        }
+
+        /// <summary>
+        /// Calls the /validate endpoint on Nexus Mods' API using the API key stored in this client upon creation.
+        /// If the key is successfully validated, its information is cached in <see cref="Program.settings.NexusDetails"/>.<br/>
+        /// Returns <see langword="false"/> if validation fails.
+        /// </summary>
+        public async Task<bool> ValidateKey()
+        {
             try
             {
-                var response = await client.GetAsync(new Uri(_baseUrl, "users/validate"));
+                var response = await _client.GetAsync("users/validate");
                 if (!response.IsSuccessStatusCode || response.Content == null)
                 {
                     Program.helper.Log($"Call to Nexus Mods failed. HTTP status code: {response.StatusCode}, {response.ReasonPhrase}");
@@ -68,10 +123,10 @@ namespace Stardrop.Utilities.External
                     {
                         Program.helper.Log($"Response from Nexus Mods:\n{await response.Content.ReadAsStringAsync()}");
                     }
-                    return null;
-                }                
+                    return false;
+                }
 
-               
+
                 string content = await response.Content.ReadAsStringAsync();
                 Validate validationModel = JsonSerializer.Deserialize<Validate>(content, new JsonSerializerOptions { PropertyNameCaseInsensitive = true })!;
 
@@ -80,47 +135,28 @@ namespace Stardrop.Utilities.External
                     Program.helper.Log($"Unable to validate given API key for Nexus Mods");
                     Program.helper.Log($"Response from Nexus Mods:\n{content}");
 
-                    return null;
+                    return false;
                 }
-                
+
                 if (Program.settings.NexusDetails is null)
                 {
-                    return null;
+                    return false;
                 }
 
                 Program.settings.NexusDetails.Username = validationModel.Name;
                 Program.settings.NexusDetails.IsPremium = validationModel.IsPremium;
+                _settings = Program.settings.NexusDetails;
 
-                return new NexusClient(Program.settings.NexusDetails, client, response.Headers);
+                UpdateRequestCounts(response.Headers);
+
+                return true;
             }
             catch (Exception ex)
             {
                 Program.helper.Log($"Failed to validate user's API key for Nexus Mods: {ex}", Helper.Status.Alert);
-                return null;
-            }                       
+                return false;
+            }
         }
-    }
-
-    public class NexusClient
-    {
-        private const string _nxmPattern = @"nxm:\/\/(?<domain>stardewvalley)\/mods\/(?<mod>[0-9]+)\/files\/(?<file>[0-9]+)\?key=(?<key>.*)&expires=(?<expiry>[0-9]+)&user_id=(?<user>[0-9]+)";
-
-        private readonly HttpClient _client;
-        private readonly NexusUser _settings;
-
-        internal int DailyRequestsLimit { get; private set; }
-        internal int DailyRequestsRemaining { get; private set; }
-        internal event EventHandler DailyRequestLimitsChanged;
-
-        // TODO: Replace with event handler, or messaging, or something.
-        //private MainWindowViewModel _displayModel;
-
-        public NexusClient(NexusUser settings, HttpClient client, HttpResponseHeaders initialValidateResponseHeaders)
-        {
-            _settings = settings;
-            _client = client;
-            UpdateRequestCounts(initialValidateResponseHeaders);
-        }       
 
         public async Task<ModDetails?> GetModDetailsViaNXM(NXM nxmData)
         {

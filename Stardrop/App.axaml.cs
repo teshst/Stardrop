@@ -51,7 +51,7 @@ namespace Stardrop
         {
             foreach (string? url in e.Urls.Where(u => String.IsNullOrEmpty(u) is false))
             {
-                await mainWindow.ProcessNXMLink(null, new NXM() { Link = url, Timestamp = DateTime.Now });
+                await mainWindow.ProcessNXMLink(new NXM() { Link = url, Timestamp = DateTime.Now });
             }
         }
 
