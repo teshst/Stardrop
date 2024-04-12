@@ -610,9 +610,14 @@ namespace Stardrop.Views
                     if (await requestWindow.ShowDialog<bool>(this))
                     {
                         // Delete old vesrion
-                        DeleteMod(mod);
-
-                        hasDeletedAMod = true;
+                        if (TryDeleteMod(mod) is false)
+                        {
+                            await CreateWarningWindow(String.Format(Program.translation.Get("ui.warning.failed_to_delete"), mod.Name), Program.translation.Get("internal.ok"));
+                        }
+                        else
+                        {
+                            hasDeletedAMod = true;
+                        }
                     }
                 }
 
@@ -2027,6 +2032,26 @@ namespace Stardrop.Views
             return downloadedFilePath;
         }
 
+        public bool TryDeleteMod(Mod mod, int retries=3)
+        {
+            try
+            {
+                DeleteMod(mod);
+            }
+            catch (Exception ex)
+            {
+                if (retries > 0)
+                {
+                    return TryDeleteMod(mod, retries - 1);
+                }
+
+                Program.helper.Log($"Failed to delete the mod {mod.Name}: {ex}", Utilities.Helper.Status.Warning);
+                return false;
+            }
+
+            return true;
+        }
+
         private void DeleteMod(Mod mod)
         {
             var targetDirectory = new DirectoryInfo(mod.ModFileInfo.DirectoryName);
@@ -2109,13 +2134,19 @@ namespace Stardrop.Views
                                             }
 
                                             // Delete old version
-                                            DeleteMod(mod);
+                                            if (TryDeleteMod(mod) is false)
+                                            {
+                                                await CreateWarningWindow(String.Format(Program.translation.Get("ui.warning.failed_to_delete_during_update"), mod.Name), Program.translation.Get("internal.ok"));
+                                            }
                                         }
                                     }
                                     else
                                     {
                                         // Delete old version
-                                        DeleteMod(mod);
+                                        if (TryDeleteMod(mod) is false)
+                                        {
+                                            await CreateWarningWindow(String.Format(Program.translation.Get("ui.warning.failed_to_delete_during_update"), mod.Name), Program.translation.Get("internal.ok"));
+                                        }
                                     }
 
                                     isUpdate = true;
