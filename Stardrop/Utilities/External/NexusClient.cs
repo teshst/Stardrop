@@ -369,6 +369,7 @@ namespace Stardrop.Utilities.External
         {
             try
             {
+                // TODO: Rework this so that it reports completion via events so that the DownloadWindow can watch it
                 var stream = await _client.GetStreamAsync(new Uri(uri));
                 using (var fileStream = new FileStream(Path.Combine(Pathing.GetNexusPath(), fileName), FileMode.CreateNew))
                 {
