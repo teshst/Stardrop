@@ -163,8 +163,10 @@
   "ui.warning.SMAPI_downloading": "Downloading the latest version of SMAPI from GitHub.",
   "ui.warning.SMAPI_installing": "Updating SMAPI to the latest version.",
   "ui.warning.SMAPI_up_to_date": "SMAPI is up-to-date.\n\n{0} is the latest version.",
+  "ui.warning.install_mod_attempt_count": "Attempting to install {0} mod(s)",
   "ui.warning.mod_installing": "Installing {0}",
   "ui.warning.mod_updating": "Updating {0}",
+  "ui.warning.mod_deleting": "Deleting old instance of {0}",
   "ui.warning.failed_to_delete": "Failed to delete {0}.\n\nMod files may be locked, see log for details.",
   "ui.warning.failed_to_delete_during_update": "Failed to delete the old instance of {0}.\n\nThe mod may install incorrectly.",
 

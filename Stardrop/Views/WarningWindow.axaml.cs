@@ -50,6 +50,23 @@ namespace Stardrop.Views
             _mainWindowModel = model;
             _closeOnParentUnlock = closeOnParentUnlock;
             _viewModel.IsButtonVisible = false;
+            _viewModel.IsProgressBarVisible = false;
+        }
+
+        public void UpdateProgress(string? text = null, int? progress = null, int? maxProgress = null)
+        {
+            if (text is not null)
+            {
+                _viewModel.WarningText = text;
+            }
+
+            if (maxProgress is null || maxProgress == 0)
+            {
+                maxProgress = progress is null ? 1 : progress.Value;
+            }
+
+            _viewModel.IsProgressBarVisible = progress is not null && progress.Value >= 0;
+            _viewModel.ProgressBarValue = progress is null ? 0 : (progress.Value / (double)maxProgress.Value) * 100;
         }
 
         public override void Show()
@@ -75,7 +92,6 @@ namespace Stardrop.Views
             }
             this.Close();
         }
-
 
         private async Task WaitForParentToUnlock()
         {
