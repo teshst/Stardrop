@@ -4,29 +4,42 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:i="clr-namespace:Projektanker.Icons.Avalonia;assembly=Projektanker.Icons.Avalonia"
              xmlns:vm="using:Stardrop.ViewModels"             
+             xmlns:scg="using:System.Collections.Generic"
+             xmlns:sys="using:System"
              mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+             Width="400"
+             Height="200"
              x:Class="Stardrop.Views.DownloadPanel"
              x:DataType="vm:DownloadPanelViewModel">
 
-    <UserControl.DataTemplates>
-        <DataTemplate DataType="vm:ModDownloadViewModel">
-            <Grid RowDefinitions="Auto, Auto, Auto" ColumnDefinitions="Auto, Auto, Auto">                
-                <TextBlock Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="3" Text="{Binding Name}"/>
-                
-                <ProgressBar Grid.Row="1" Grid.Column="0" Minimum="0" Maximum="1" Value="{Binding Completion}"/>
-                <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding Completion, StringFormat='{}{0:0.##}'"/>                
-                <Button Grid.Row="1" Grid.Column="2"/>
-                
-                <TextBlock Grid.Row="2" Grid.Column="0"/>
-                <TextBlock Grid.Row="2" Grid.Column="1"/>
-            </Grid>
-        </DataTemplate>
-    </UserControl.DataTemplates>
+    <Grid RowDefinitions="Auto, Auto">
+        <Button Content="DEBUG" Click="Debug_Clicked"/>
+        <ItemsRepeater x:Name="DownloadItems" Grid.Row="1" Items="{Binding Downloads}">
+            <ItemsRepeater.ItemTemplate>
+                <DataTemplate DataType="vm:ModDownloadViewModel">
+                    <Grid RowDefinitions="Auto, Auto, Auto">
+                        <TextBlock Grid.Row="0" Text="{Binding Name}"/>
 
-    <Grid>
-        <ListBox Items="{Binding Downloads}">
-            
-        </ListBox>
+                        <Grid Grid.Row="1" ColumnDefinitions="8*, 2*, Auto">
+                            <ProgressBar Grid.Column="0"                                         
+                                         Minimum="0" Maximum="100"
+                                         IsIndeterminate="{Binding IsSizeUnknown}"
+                                         Value="{Binding Completion}"/>
+                            <TextBlock x:Name="Percentage" Grid.Row="1" Grid.Column="1" Text="{Binding Completion, StringFormat='{}{0:0.##}%'}"/>
+                            <!--TODO: Replace this with a cancel icon, and also add functionality-->
+                            <Button x:Name="CancelButton" Grid.Row="1" Grid.Column="2" Content="X"/>
+                        </Grid>
+
+                        <TextBlock x:Name="SpeedText" Grid.Row="2" Text="{Binding DownloadSpeedLabel}"/>
+                        <StackPanel Orientation="Horizontal" Grid.Row="2" HorizontalAlignment="Right">
+                            <TextBlock Text="{Binding DownloadedBytes}"/>
+                            <TextBlock Text=" / "/>
+                            <TextBlock Text="{Binding SizeBytes}" />
+                        </StackPanel>
+                    </Grid>
+                </DataTemplate>
+            </ItemsRepeater.ItemTemplate>
+        </ItemsRepeater>
     </Grid>
     
 </UserControl>

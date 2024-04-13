@@ -23,6 +23,9 @@ namespace Stardrop.Utilities.External
 
         public static NexusClient? Client { get; private set; }
 
+        public delegate void NexusClientChangedHandler(NexusClient? oldClient, NexusClient? newClient);
+        public static event NexusClientChangedHandler? ClientChanged = null;
+
         /// <summary>
         /// If the user has entered their Nexus API key in a previous session, this will attempt to retreive
         /// it.
@@ -56,7 +59,8 @@ namespace Stardrop.Utilities.External
         /// <summary>
         /// Creates a new HttpClient configured with a Nexus API key, and validates it against the Nexus API.
         /// If successfully validated, sets <see cref="Client"/>, as well as returning a reference to it.
-        /// If called when a <see cref="Client"/> is already set, the Client will be replaced.
+        /// If called when a <see cref="Client"/> is already set, the Client will be replaced.<br/>
+        /// On success, fires <see cref="ClientChanged"/>, with the previous client (if any), and the new client.
         /// </summary>
         /// <param name="apiKey">The API key from Nexus mods that will be included in the 'apiKey' header when making calls.</param>
         /// <returns>The created client, if successful. Null otherwise.</returns>
@@ -77,14 +81,20 @@ namespace Stardrop.Utilities.External
                 return null;
             }
 
+            ClientChanged?.Invoke(oldClient: Client, newClient: nexusClient);
             Client = nexusClient;
             return Client;
         }
 
         /// <summary>
-        /// Nulls out the <see cref="Client"/>.
+        /// Nulls out the <see cref="Client"/>, and fires a <see cref="ClientChanged"/> event
+        /// to give consumers a chance to clean up their event handlers.
         /// </summary>
-        public static void ClearClient() => Client = null;        
+        public static void ClearClient()
+        {
+            ClientChanged?.Invoke(oldClient: Client, newClient: null);
+            Client = null;
+        }   
     }
 
     public class NexusClient
@@ -97,7 +107,10 @@ namespace Stardrop.Utilities.External
         internal int DailyRequestsLimit { get; private set; }
         internal int DailyRequestsRemaining { get; private set; }
         internal event EventHandler? DailyRequestLimitsChanged = null;
-        internal event EventHandler<ModDownloadStartedEventArgs>? DownloadStarted = null;
+        internal event EventHandler<ModDownloadStartedEventArgs>? DownloadStarted = null;        
+        internal event EventHandler<ModDownloadProgressEventArgs>? DownloadProgressChanged = null;
+        internal event EventHandler<ModDownloadCompletedEventArgs>? DownloadCompleted = null;
+        internal event EventHandler<ModDownloadFailedEventArgs>? DownloadFailed = null;
 
         public NexusClient(HttpClient client)
         {
@@ -369,10 +382,11 @@ namespace Stardrop.Utilities.External
 
         public async Task<string?> DownloadFileAndGetPath(string uri, string fileName)
         {
+            var requestUri = new Uri(uri);
+            var downloadCancellationSource = new CancellationTokenSource();
+            var requestMessage = new HttpRequestMessage(HttpMethod.Get, requestUri);
             try
             {                
-                var downloadCancellationSource = new CancellationTokenSource();
-                var requestMessage = new HttpRequestMessage(HttpMethod.Get, new Uri(uri));
                 var response = await _client.SendAsync(requestMessage, HttpCompletionOption.ResponseHeadersRead, downloadCancellationSource.Token);                
                 if (response.IsSuccessStatusCode is false)
                 {
@@ -380,38 +394,37 @@ namespace Stardrop.Utilities.External
                     return null;
                 }                
 
-                long? contentLength = response.Content.Headers.ContentLength;                                
+                using var fileStream = new FileStream(Path.Combine(Pathing.GetNexusPath(), fileName), FileMode.CreateNew);
+                using var downloadStream = await response.Content.ReadAsStreamAsync();
+
+                long? contentLength = response.Content.Headers.ContentLength;
+                DownloadStarted?.Invoke(this, new ModDownloadStartedEventArgs(requestUri, fileName, contentLength, downloadCancellationSource.Token));
                 if (contentLength.HasValue is false || contentLength.Value == 0)
                 {
-                    // TODO: send some event that just notes that a download is ongoing,
-                    // then do a basic stream.copyToAsync().
-                    // Once it's done, fire a download completion event
+                    // We don't know the size, so we can't report progress, so just do a basic downloadStream copy                    
+                    await downloadStream.CopyToAsync(fileStream);
                 }
                 else
                 {
-                    DownloadStarted?.Invoke(this, new ModDownloadStartedEventArgs(new Uri(uri), fileName, contentLength, downloadCancellationSource.Token));
-                    using (var fileStream = new FileStream(Path.Combine(Pathing.GetNexusPath(), fileName), FileMode.CreateNew))
-                    using (var stream = await response.Content.ReadAsStreamAsync())
+                    // We *do* know the size, so do manual buffered reads and report progress as we go
+                    var buffer = new byte[81920].AsMemory();
+                    long totalBytesRead = 0;
+                    int bytesRead;
+                    while ((bytesRead = await downloadStream.ReadAsync(buffer, downloadCancellationSource.Token)) != 0)
                     {
-                        var buffer = new byte[81920];
-                        long totalBytesRead = 0;
-                        int bytesRead;
-                        while ((bytesRead = await stream.ReadAsync(buffer, 0, buffer.Length, downloadCancellationSource.Token)) != 0)
-                        {
-                            await fileStream.WriteAsync(buffer, 0, bytesRead, downloadCancellationSource.Token);
-                            totalBytesRead += bytesRead;
-                            // TODO: Fire a download progress report event
-                        }
-                    }
-                    // TODO: Fire a download completion event
+                        await fileStream.WriteAsync(buffer, downloadCancellationSource.Token);
+                        totalBytesRead += bytesRead;
+                        DownloadProgressChanged?.Invoke(this, new ModDownloadProgressEventArgs(requestUri, totalBytesRead));
+                    }                                        
                 }
 
+                DownloadCompleted?.Invoke(this, new ModDownloadCompletedEventArgs(requestUri));
                 return Path.Combine(Pathing.GetNexusPath(), fileName);
             }
             catch (Exception ex)
             {
                 Program.helper.Log($"Failed to download mod file for Nexus Mods: {ex}", Helper.Status.Alert);
-                // TODO: Fire a download failed event
+                DownloadFailed?.Invoke(this, new ModDownloadFailedEventArgs(requestUri));
                 return null;
             }            
         }

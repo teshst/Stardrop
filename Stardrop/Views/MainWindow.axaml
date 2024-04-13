@@ -1,6 +1,7 @@
 ﻿<Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="using:Stardrop.ViewModels"
+        xmlns:view="using:Stardrop.Views"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:sys="clr-namespace:System;assembly=netstandard"
@@ -646,6 +647,13 @@
 				</Grid.ColumnDefinitions>
                 <Button Name="statusBarButton" Content="{Binding UpdateStatusText}" Grid.Column="0" Classes="hyperlink" Click="ModUpdateCheck_Click" HorizontalAlignment="Left"/>
                 <!--Download button is gonna go here-->
+                <Button Name="downloadButton" Content="Downloads" Grid.Column="0" Classes="hyperlink" HorizontalAlignment="Center">
+                    <Button.Flyout>
+                        <Flyout Closing="Flyout_Closing_1">
+							<view:DownloadPanel/>
+                        </Flyout>
+                    </Button.Flyout>
+                </Button>
 				<Button Name="nexusModsButton" Content="{Binding NexusStatus}" Grid.Column="0" Classes="hyperlink" HorizontalAlignment="Right" VerticalAlignment="Center"/>
 				<TextBlock Text="{Binding NexusLimits}" Grid.Column="1" HorizontalAlignment="Right" VerticalAlignment="Center" Foreground="{DynamicResource ThemeForegroundBrush}" IsVisible="{Binding ShowEndorsements}"/>
 				<TextBlock Text=" | " Grid.Column="2" HorizontalAlignment="Right" VerticalAlignment="Center" Foreground="{DynamicResource ThemeForegroundBrush}"/>

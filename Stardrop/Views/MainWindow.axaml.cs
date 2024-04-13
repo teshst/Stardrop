@@ -2599,5 +2599,11 @@ namespace Stardrop.Views
 
             await DisplaySettingsWindow();
         }
+
+        private void Flyout_Closing_1(object? sender, System.ComponentModel.CancelEventArgs e)
+        {
+            // TODO THIS IS A DEBUG METHOD, DELETE BEFORE MERGE
+            e.Cancel = true;
+        }
     }
 }
