@@ -82,6 +82,16 @@ namespace Stardrop.Views
                 }
             }
 
+            // Set the application's position and size
+            if (localDataCache.LastSessionData is not null)
+            {
+                this.Width = localDataCache.LastSessionData.Width;
+                this.Height = localDataCache.LastSessionData.Height;
+                this.Position = new PixelPoint(localDataCache.LastSessionData.PositionX, localDataCache.LastSessionData.PositionY);
+
+                this.WindowStartupLocation = WindowStartupLocation.Manual;
+            }
+
             // Sets the grid's column visibility, based on previous session
             if (localDataCache.ColumnActiveStates is not null)
             {
@@ -242,6 +252,25 @@ namespace Stardrop.Views
 
             // Write the settings cache
             File.WriteAllText(Pathing.GetSettingsPath(), JsonSerializer.Serialize(Program.settings, new JsonSerializerOptions() { WriteIndented = true }));
+
+            // Cache the local data with latest values
+            if (File.Exists(Pathing.GetDataCachePath()))
+            {
+                ClientData localDataCache = JsonSerializer.Deserialize<ClientData>(File.ReadAllText(Pathing.GetDataCachePath()), new JsonSerializerOptions { AllowTrailingCommas = true });
+
+                if (localDataCache is not null)
+                {
+                    localDataCache.LastSessionData = new LastSessionData()
+                    {
+                        Height = this.Height,
+                        Width = this.Width,
+                        PositionX = this.Position.X,
+                        PositionY = this.Position.Y
+                    };
+                }
+
+                File.WriteAllText(Pathing.GetDataCachePath(), JsonSerializer.Serialize(localDataCache, new JsonSerializerOptions() { WriteIndented = true }));
+            }
         }
 
         private async void MainWindow_Opened(object? sender, EventArgs e)
