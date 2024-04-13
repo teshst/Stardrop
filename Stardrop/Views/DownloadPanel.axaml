@@ -6,18 +6,35 @@
              xmlns:vm="using:Stardrop.ViewModels"             
              xmlns:scg="using:System.Collections.Generic"
              xmlns:sys="using:System"
-             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+             mc:Ignorable="d" d:DesignWidth="400" d:DesignHeight="200"
              Width="400"
              Height="200"
              x:Class="Stardrop.Views.DownloadPanel"
              x:DataType="vm:DownloadPanelViewModel">
 
-    <Grid RowDefinitions="Auto, Auto">
-        <Button Content="DEBUG" Click="Debug_Clicked"/>
-        <ItemsRepeater x:Name="DownloadItems" Grid.Row="1" Items="{Binding Downloads}">
+    <UserControl.Styles>
+        <Style Selector="TextBlock">
+            <Setter Property="Foreground" Value="{DynamicResource ThemeForegroundBrush}"/>
+        </Style>
+        <Style Selector="Button">
+            <Setter Property="Foreground" Value="{DynamicResource ThemeForegroundBrush}"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource HighlightBrush}"/>
+        </Style>
+        <Style Selector="Button:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="LightGray"/>
+        </Style>
+        <Style Selector="Button:pressed /template/ ContentPresenter">
+            <Setter Property="Background" Value="White"/>
+        </Style>
+    </UserControl.Styles>
+    
+    <ScrollViewer>
+        <ItemsRepeater x:Name="DownloadItems" Items="{Binding Downloads}">
             <ItemsRepeater.ItemTemplate>
                 <DataTemplate DataType="vm:ModDownloadViewModel">
                     <Grid RowDefinitions="Auto, Auto, Auto">
+                        
                         <TextBlock Grid.Row="0" Text="{Binding Name}"/>
 
                         <Grid Grid.Row="1" ColumnDefinitions="8*, 2*, Auto">
@@ -25,21 +42,37 @@
                                          Minimum="0" Maximum="100"
                                          IsIndeterminate="{Binding IsSizeUnknown}"
                                          Value="{Binding Completion}"/>
-                            <TextBlock x:Name="Percentage" Grid.Row="1" Grid.Column="1" Text="{Binding Completion, StringFormat='{}{0:0.##}%'}"/>
-                            <!--TODO: Replace this with a cancel icon, and also add functionality-->
-                            <Button x:Name="CancelButton" Grid.Row="1" Grid.Column="2" Content="X"/>
+                            <TextBlock x:Name="PercentageText" 
+                                       Grid.Row="1" Grid.Column="1"
+                                       HorizontalAlignment="Center"
+                                       VerticalAlignment="Center"
+                                       TextAlignment="Right"
+                                       Text="{Binding Completion, StringFormat='{}{0:0.##}%'}"/>
+                            <Button x:Name="CancelButton" 
+                                    Grid.Row="1" Grid.Column="2" 
+                                    i:Attached.Icon="mdi-cancel"
+                                    Command="{Binding CancelCommand}"
+                                    IsVisible="{Binding !IsDownloadEnded}"/>
+                            <Button x:Name="RemoveButton"
+                                    Grid.Row="1" Grid.Column="2"
+                                    i:Attached.Icon="mdi-close"
+                                    Command="{Binding RemoveCommand}"
+                                    IsVisible="{Binding IsDownloadEnded}"/>
                         </Grid>
 
-                        <TextBlock x:Name="SpeedText" Grid.Row="2" Text="{Binding DownloadSpeedLabel}"/>
-                        <StackPanel Orientation="Horizontal" Grid.Row="2" HorizontalAlignment="Right">
-                            <TextBlock Text="{Binding DownloadedBytes}"/>
-                            <TextBlock Text=" / "/>
-                            <TextBlock Text="{Binding SizeBytes}" />
-                        </StackPanel>
+                        <TextBlock x:Name="SpeedText" 
+                                   Grid.Row="2" 
+                                   Text="{Binding DownloadSpeedLabel}"/>
+                        <TextBlock x:Name="DownloadProgressText" 
+                                   Grid.Row="2" 
+                                   HorizontalAlignment="Right" 
+                                   TextAlignment="Right"
+                                   Text="{Binding DownloadProgressLabel}"/>
+                        
                     </Grid>
                 </DataTemplate>
             </ItemsRepeater.ItemTemplate>
         </ItemsRepeater>
-    </Grid>
+    </ScrollViewer>    
     
 </UserControl>

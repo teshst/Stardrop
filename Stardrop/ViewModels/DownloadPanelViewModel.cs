@@ -32,8 +32,9 @@ namespace Stardrop.ViewModels
         {
             if (oldClient is not null)
             {
-                // TODO: Should we clear the Downloads dict?
-                // TODO: Should we cancel all in-flight downloads? (probably)
+                // TODO: Cancel all in-flight downloads
+                // Unsubscribe from all removal event handlers
+                // Clear the Downloads dict
                 ClearEventHandlers(oldClient);
             }
             if (newClient is not null)
@@ -60,7 +61,9 @@ namespace Stardrop.ViewModels
 
         private void DownloadStarted(object? sender, ModDownloadStartedEventArgs e)
         {
-            Downloads.Add(new ModDownloadViewModel(e.Uri, e.Name, e.Size, e.DownloadCancelToken));
+            var downloadVM = new ModDownloadViewModel(e.Uri, e.Name, e.Size, e.DownloadCancellationSource);
+            downloadVM.RemovalRequested += DownloadRemovalRequested;
+            Downloads.Add(downloadVM);
         }
 
         private void DownloadProgressChanged(object? sender, ModDownloadProgressEventArgs e)
@@ -89,6 +92,17 @@ namespace Stardrop.ViewModels
             {
                 download.DownloadStatus = ModDownloadStatus.Failed;
             }
+        }
+
+        private void DownloadRemovalRequested(object? sender, EventArgs _)
+        {
+            if (sender is not ModDownloadViewModel downloadVM)
+            {
+                return;
+            }
+
+            downloadVM.RemovalRequested -= DownloadRemovalRequested;
+            Downloads.Remove(downloadVM);
         }
     }
 }

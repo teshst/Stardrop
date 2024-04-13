@@ -35,6 +35,10 @@
 			<Setter Property="Background" Value="Transparent"/>
 			<Setter Property="BorderThickness" Value="0"/>
 		</Style>
+        <Style Selector="FlyoutPresenter.DownloadBoxFlyout">
+            <Setter Property="Background" Value="{DynamicResource ThemeBackgroundBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource HighlightBrush}"/>
+        </Style>
 		<Style Selector="MenuItem.ColumnActive">
 			<Setter Property="i:MenuItem.Icon" Value="mdi-check-outline" />
 		</Style>
@@ -649,7 +653,7 @@
                 <!--Download button is gonna go here-->
                 <Button Name="downloadButton" Content="Downloads" Grid.Column="0" Classes="hyperlink" HorizontalAlignment="Center">
                     <Button.Flyout>
-                        <Flyout Closing="Flyout_Closing_1">
+                        <Flyout FlyoutPresenterClasses="DownloadBoxFlyout">
 							<view:DownloadPanel/>
                         </Flyout>
                     </Button.Flyout>

@@ -1667,6 +1667,8 @@ namespace Stardrop.Views
             if (Program.settings.IsAskingBeforeAcceptingNXM is false || await requestWindow.ShowDialog<bool>(this))
             {
                 var downloadedFilePath = await Nexus.Client.DownloadFileAndGetPath(processedDownloadLink, modDetails.Name);
+                // TODO: Once this returns a better value, inspect it to see if it was
+                // a user-cancellation failure, or something else
                 if (downloadedFilePath is null)
                 {
                     await CreateWarningWindow(String.Format(Program.translation.Get("ui.warning.failed_nexus_install"), modDetails.Name), Program.translation.Get("internal.ok"));
@@ -2142,6 +2144,8 @@ namespace Stardrop.Views
             }
 
             var downloadedFilePath = await Nexus.Client.DownloadFileAndGetPath(modDownloadLink, modFile.Name);
+            // TODO: Once this returns a better value, inspect it to see if it was
+            // a user-cancellation failure, or something else
             if (downloadedFilePath is null)
             {
                 await CreateWarningWindow(String.Format(Program.translation.Get("ui.warning.failed_nexus_install"), mod.Name), Program.translation.Get("internal.ok"));
@@ -2598,12 +2602,6 @@ namespace Stardrop.Views
             await CreateWarningWindow(Program.translation.Get("ui.warning.unable_to_locate_smapi"), Program.translation.Get("internal.ok"));
 
             await DisplaySettingsWindow();
-        }
-
-        private void Flyout_Closing_1(object? sender, System.ComponentModel.CancelEventArgs e)
-        {
-            // TODO THIS IS A DEBUG METHOD, DELETE BEFORE MERGE
-            e.Cancel = true;
         }
     }
 }
