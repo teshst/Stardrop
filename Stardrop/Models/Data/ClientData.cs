@@ -6,5 +6,6 @@ namespace Stardrop.Models.Data
     {
         public List<ModInstallData> ModInstallData { get; set; }
         public Dictionary<string, bool> ColumnActiveStates { get; set; } = new Dictionary<string, bool>();
+        public LastSessionData LastSessionData { get; set; }
     }
 }

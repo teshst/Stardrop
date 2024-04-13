@@ -82,6 +82,16 @@ namespace Stardrop.Views
                 }
             }
 
+            // Set the application's position and size
+            if (localDataCache.LastSessionData is not null)
+            {
+                this.Width = localDataCache.LastSessionData.Width;
+                this.Height = localDataCache.LastSessionData.Height;
+                this.Position = new PixelPoint(localDataCache.LastSessionData.PositionX, localDataCache.LastSessionData.PositionY);
+
+                this.WindowStartupLocation = WindowStartupLocation.Manual;
+            }
+
             // Sets the grid's column visibility, based on previous session
             if (localDataCache.ColumnActiveStates is not null)
             {
@@ -242,6 +252,25 @@ namespace Stardrop.Views
 
             // Write the settings cache
             File.WriteAllText(Pathing.GetSettingsPath(), JsonSerializer.Serialize(Program.settings, new JsonSerializerOptions() { WriteIndented = true }));
+
+            // Cache the local data with latest values
+            if (File.Exists(Pathing.GetDataCachePath()))
+            {
+                ClientData localDataCache = JsonSerializer.Deserialize<ClientData>(File.ReadAllText(Pathing.GetDataCachePath()), new JsonSerializerOptions { AllowTrailingCommas = true });
+
+                if (localDataCache is not null)
+                {
+                    localDataCache.LastSessionData = new LastSessionData()
+                    {
+                        Height = this.Height,
+                        Width = this.Width,
+                        PositionX = this.Position.X,
+                        PositionY = this.Position.Y
+                    };
+                }
+
+                File.WriteAllText(Pathing.GetDataCachePath(), JsonSerializer.Serialize(localDataCache, new JsonSerializerOptions() { WriteIndented = true }));
+            }
         }
 
         private async void MainWindow_Opened(object? sender, EventArgs e)
@@ -610,9 +639,14 @@ namespace Stardrop.Views
                     if (await requestWindow.ShowDialog<bool>(this))
                     {
                         // Delete old vesrion
-                        DeleteMod(mod);
-
-                        hasDeletedAMod = true;
+                        if (TryDeleteMod(mod) is false)
+                        {
+                            await CreateWarningWindow(String.Format(Program.translation.Get("ui.warning.failed_to_delete"), mod.Name), Program.translation.Get("internal.ok"));
+                        }
+                        else
+                        {
+                            hasDeletedAMod = true;
+                        }
                     }
                 }
 
@@ -1654,6 +1688,21 @@ namespace Stardrop.Views
             }
         }
 
+        private void UpdateLockWindow(string? lockReason = null, int? progress = null, int? maxProgress = null)
+        {
+            if (_viewModel.IsLocked is false)
+            {
+                return;
+            }
+
+            WarningWindow? lockWindow = OwnedWindows.FirstOrDefault(w => w is WarningWindow) as WarningWindow;
+            if (lockWindow is null)
+            {
+                return;
+            }
+            lockWindow.UpdateProgress(lockReason, progress, maxProgress);
+        }
+
         private async Task<UpdateCache?> GetCachedModUpdates(List<Mod> mods, bool skipCacheCheck = false)
         {
             int modsToUpdate = 0;
@@ -2027,6 +2076,26 @@ namespace Stardrop.Views
             return downloadedFilePath;
         }
 
+        public bool TryDeleteMod(Mod mod, int retries=3)
+        {
+            try
+            {
+                DeleteMod(mod);
+            }
+            catch (Exception ex)
+            {
+                if (retries > 0)
+                {
+                    return TryDeleteMod(mod, retries - 1);
+                }
+
+                Program.helper.Log($"Failed to delete the mod {mod.Name}: {ex}", Utilities.Helper.Status.Warning);
+                return false;
+            }
+
+            return true;
+        }
+
         private void DeleteMod(Mod mod)
         {
             var targetDirectory = new DirectoryInfo(mod.ModFileInfo.DirectoryName);
@@ -2038,6 +2107,12 @@ namespace Stardrop.Views
 
         private async Task<List<Mod>> AddMods(string[]? filePaths)
         {
+            // Wait until current lock is finished before doing further installs
+            while (_viewModel.IsLocked)
+            {
+                await Task.Delay(500);
+            }
+
             await HandleModListRefresh();
 
             var addedMods = new List<Mod>();
@@ -2045,6 +2120,10 @@ namespace Stardrop.Views
             {
                 return addedMods;
             }
+
+            // Lock the window
+            int totalMods = filePaths.Length;
+            SetLockState(true, String.Format(Program.translation.Get("ui.warning.install_mod_attempt_count"), totalMods));
 
             // Get the local data
             ClientData localDataCache = new ClientData();
@@ -2054,6 +2133,8 @@ namespace Stardrop.Views
             }
 
             // Export zip to the default mods folder
+            int currentModIndex = 1;
+            List<string> warnings = new List<string>();
             foreach (string fileFullName in filePaths)
             {
                 try
@@ -2071,10 +2152,11 @@ namespace Stardrop.Views
                         // Warn and skip the install logic if the given archive has no manifest.json
                         if (pathToManifests.Count == 0)
                         {
-                            await CreateWarningWindow(String.Format(Program.translation.Get("ui.warning.no_manifest"), fileFullName), Program.translation.Get("internal.ok"));
+                            warnings.Add(String.Format(Program.translation.Get("ui.warning.no_manifest"), fileFullName));
                             continue;
                         }
 
+                        int currentManifestIndex = 1;
                         bool alwaysAskToDelete = Program.settings.AlwaysAskToDelete;
                         foreach (var manifestPath in pathToManifests.Keys)
                         {
@@ -2099,7 +2181,10 @@ namespace Stardrop.Views
                                             }
                                         }
 
-                                        var requestWindow = new FlexibleOptionWindow(String.Format(warningMessage, manifest.Name), Program.translation.Get("internal.yes"), Program.translation.Get("internal.yes_all"), Program.translation.Get("internal.no"));
+                                        var requestWindow = new FlexibleOptionWindow(String.Format(warningMessage, manifest.Name), Program.translation.Get("internal.yes"), Program.translation.Get("internal.yes_all"), Program.translation.Get("internal.no"))
+                                        {
+                                            Topmost = true
+                                        };
                                         Choice response = await requestWindow.ShowDialog<Choice>(this);
                                         if (response == Choice.First || response == Choice.Second)
                                         {
@@ -2109,13 +2194,21 @@ namespace Stardrop.Views
                                             }
 
                                             // Delete old version
-                                            DeleteMod(mod);
+                                            UpdateLockWindow(String.Format(Program.translation.Get("ui.warning.mod_deleting"), manifest.Name), currentManifestIndex, pathToManifests.Keys.Count);
+                                            if (TryDeleteMod(mod) is false)
+                                            {
+                                                warnings.Add(String.Format(Program.translation.Get("ui.warning.failed_to_delete_during_update"), mod.Name));
+                                            }
                                         }
                                     }
                                     else
                                     {
                                         // Delete old version
-                                        DeleteMod(mod);
+                                        UpdateLockWindow(String.Format(Program.translation.Get("ui.warning.mod_deleting"), manifest.Name), currentManifestIndex, pathToManifests.Keys.Count);
+                                        if (TryDeleteMod(mod) is false)
+                                        {
+                                            warnings.Add(String.Format(Program.translation.Get("ui.warning.failed_to_delete_during_update"), mod.Name));
+                                        }
                                     }
 
                                     isUpdate = true;
@@ -2141,8 +2234,11 @@ namespace Stardrop.Views
                                 }
 
                                 // Set lock state to let user know we are installing the mod
-                                SetLockState(true, String.Format(isUpdate ? Program.translation.Get("ui.warning.mod_updating") : Program.translation.Get("ui.warning.mod_installing"), manifest.Name));
-
+                                string individualProgressText = String.Format(isUpdate ? Program.translation.Get("ui.warning.mod_updating") : Program.translation.Get("ui.warning.mod_installing"), manifest.Name);
+                                string modProgressText = String.Format("[{0} / {1}] Mods", currentModIndex, totalMods);
+                                string manifestProgressText = String.Format("[{0} / {1}] Manifests", currentManifestIndex, pathToManifests.Keys.Count);
+                                UpdateLockWindow(String.Concat(modProgressText, "\n", manifestProgressText, "\n\n", individualProgressText), currentManifestIndex, pathToManifests.Keys.Count);
+                                
                                 Program.helper.Log($"Install path for mod {manifest.UniqueID}:{installPath}");
                                 var manifestFolderPath = manifestPath.Replace("manifest.json", String.Empty, StringComparison.OrdinalIgnoreCase);
                                 foreach (var entry in archive.Entries.Where(e => e.Key.StartsWith(manifestFolderPath)))
@@ -2183,23 +2279,32 @@ namespace Stardrop.Views
                                         await Task.Run(() => entry.WriteToFile(outputPath, new ExtractionOptions() { ExtractFullPath = false, Overwrite = true }));
                                     }
                                 }
-                                SetLockState(false);
+
                                 addedMods.Add(new Mod(manifest, new FileInfo(Path.Join(installPath, manifestFolderPath)), manifest.UniqueID, manifest.Version, manifest.Name, manifest.Description, manifest.Author));
                             }
                             else
                             {
-                                SetLockState(false);
-                                await CreateWarningWindow(String.Format(Program.translation.Get("ui.warning.no_manifest"), fileFullName), Program.translation.Get("internal.ok"));
+                                warnings.Add(String.Format(Program.translation.Get("ui.warning.no_manifest"), fileFullName));
                             }
+
+                            currentManifestIndex += 1;
                         }
                     }
                 }
                 catch (Exception ex)
                 {
                     Program.helper.Log($"Failed to unzip the file {fileFullName} due to the following error: {ex}", Utilities.Helper.Status.Warning);
-                    SetLockState(false);
-                    await CreateWarningWindow(String.Format(Program.translation.Get("ui.warning.unable_to_load_mod"), fileFullName), Program.translation.Get("internal.ok"));
+                    warnings.Add(String.Format(Program.translation.Get("ui.warning.unable_to_load_mod"), fileFullName));
                 }
+
+                currentModIndex += 1;
+            }
+
+            // Display warnings
+            SetLockState(false);
+            foreach (string warningMessage in warnings)
+            {
+                await CreateWarningWindow(warningMessage, Program.translation.Get("internal.ok"));
             }
 
             // Cache the local data
