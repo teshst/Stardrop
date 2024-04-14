@@ -12,7 +12,7 @@ namespace Stardrop.ViewModels
         public bool IsButtonVisible { get { return _isButtonVisible; } set { this.RaiseAndSetIfChanged(ref _isButtonVisible, value); } }
         private bool _isProgressBarVisible;
         public bool IsProgressBarVisible { get { return _isProgressBarVisible; } set { this.RaiseAndSetIfChanged(ref _isProgressBarVisible, value); } }
-        private double _progressBarValue = 0;
+        private double _progressBarValue;
         public double ProgressBarValue { get { return _progressBarValue; } set { this.RaiseAndSetIfChanged(ref _progressBarValue, value); } }
 
         public WarningWindowViewModel()
