@@ -44,6 +44,9 @@ namespace Stardrop.Views
 
         private string _lockReason;
 
+        // Session related
+        private LastSessionData _lastSessionDate;
+
         public MainWindow()
         {
             InitializeComponent();
@@ -85,16 +88,7 @@ namespace Stardrop.Views
             // Set the application's position and size
             if (localDataCache.LastSessionData is not null)
             {
-                Program.helper.Log($"Setting window size according to settings: {localDataCache.LastSessionData.Width}x{localDataCache.LastSessionData.Height} ({localDataCache.LastSessionData.PositionX}, {localDataCache.LastSessionData.PositionY})");
-
-                /*
-                    this.Width = localDataCache.LastSessionData.Width;
-                    this.Height = localDataCache.LastSessionData.Height;
-
-                    this.WindowStartupLocation = WindowStartupLocation.Manual;
-                */
-
-                this.Position = new PixelPoint(localDataCache.LastSessionData.PositionX, localDataCache.LastSessionData.PositionY);
+                _lastSessionDate = localDataCache.LastSessionData;
             }
 
             // Sets the grid's column visibility, based on previous session
@@ -282,6 +276,24 @@ namespace Stardrop.Views
 
         private async void MainWindow_Opened(object? sender, EventArgs e)
         {
+            if (_lastSessionDate is not null)
+            {
+                try
+                {
+                    Program.helper.Log($"Setting window size according to settings: {_lastSessionDate.Width}x{_lastSessionDate.Height} ({_lastSessionDate.PositionX}, {_lastSessionDate.PositionY})");
+
+                    this.Width = _lastSessionDate.Width;
+                    this.Height = _lastSessionDate.Height;
+                    this.Position = new PixelPoint(_lastSessionDate.PositionX, _lastSessionDate.PositionY);
+
+                    this.WindowStartupLocation = WindowStartupLocation.Manual;
+                }
+                catch (Exception ex)
+                {
+                    Program.helper.Log($"Failed to restore window settings!");
+                }
+            }
+
             // Check for Stardrop updates
             await HandleStardropUpdateCheck();
 
