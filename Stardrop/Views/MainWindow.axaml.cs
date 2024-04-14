@@ -196,6 +196,8 @@ namespace Stardrop.Views
                 StartSMAPI();
             }
 
+            Program.helper.Log($"Initialization complete!");
+
 #if DEBUG
             this.AttachDevTools();
 #endif
@@ -411,7 +413,7 @@ namespace Stardrop.Views
             }
             catch (IOException ex)
             {
-                //Program.helper.Log($"Unable to access the Links.json file");
+                Program.helper.Log($"Unable to access the Links.json file");
                 return;
             }
             catch (Exception ex)
@@ -1205,6 +1207,8 @@ namespace Stardrop.Views
 
         private async Task DisplaySettingsWindow()
         {
+            Program.helper.Log($"Opening settings window");
+
             var editorWindow = new SettingsWindow();
             editorWindow.WindowStartupLocation = WindowStartupLocation.CenterOwner;
             if (await editorWindow.ShowDialog<bool>(this))
@@ -1955,7 +1959,7 @@ namespace Stardrop.Views
         private async void CheckForNexusConnection()
         {
             var apiKey = Nexus.GetKey();
-            Program.helper.Log($"Attempting to check for Nexus Mods connection (Has Key: {string.IsNullOrEmpty(apiKey) is false}");
+            Program.helper.Log($"Attempting to check for Nexus Mods connection (Has Key: {string.IsNullOrEmpty(apiKey) is false})");
 
             if (String.IsNullOrEmpty(apiKey) is false && await Nexus.ValidateKey(apiKey))
             {
@@ -2109,6 +2113,8 @@ namespace Stardrop.Views
 
         private void DeleteMod(Mod mod)
         {
+            Program.helper.Log($"Attempting to delete the mod {mod.Name}");
+
             var targetDirectory = new DirectoryInfo(mod.ModFileInfo.DirectoryName);
             if (targetDirectory is not null && targetDirectory.Exists)
             {
