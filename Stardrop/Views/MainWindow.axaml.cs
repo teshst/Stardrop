@@ -324,6 +324,9 @@ namespace Stardrop.Views
             }
 
 
+            // Register a handler to watch whenever the Nexus client changes, so setpu and teardown get handled automatically
+            Nexus.ClientChanged += NexusClientChanged;
+
             // Set up the Nexus Mods connection, and attempt to register for the NXM URI protocol
             await CheckForNexusConnection();
 
@@ -1593,19 +1596,7 @@ namespace Stardrop.Views
             detailsWindow.WindowStartupLocation = WindowStartupLocation.CenterOwner;
             if (await detailsWindow.ShowDialog<bool>(this) is true)
             {
-                DisconnectFromNexus();
-            }
-        }
-
-        private async Task VerifyNxmProtocol()
-        {
-            var requestWindow = new MessageWindow(Program.translation.Get("ui.message.confirm_nxm_association"));
-            if (await requestWindow.ShowDialog<bool>(this))
-            {
-                if (NXMProtocol.Register(Program.executablePath) is false)
-                {
-                    await new WarningWindow(Program.translation.Get("ui.warning.failed_to_set_association"), Program.translation.Get("internal.ok")).ShowDialog(this);
-                }
+                Nexus.ClearClient();                
             }
         }
 
@@ -2001,7 +1992,7 @@ namespace Stardrop.Views
                 Program.helper.Log($"Nexus Mods connection failed.");
 
                 Program.settings.NexusDetails = new Models.Nexus.NexusUser();
-                DisconnectFromNexus();
+                Nexus.ClearClient();
             }
         }
 
@@ -2017,20 +2008,41 @@ namespace Stardrop.Views
                 return;
             }            
 
-            NexusClient? nexusClient = await Nexus.CreateClient(apiKey);
-            if (nexusClient is not null)
+            // Create a global Nexus client. Further setup gets taken care of in NexusClientChanged.
+            await Nexus.CreateClient(apiKey);         
+        }
+
+        private async void NexusClientChanged(NexusClient? oldClient, NexusClient? newClient)
+        {
+            // Tear down old client stuff, if an old client is being discarded
+            if (oldClient is not null)
             {
-                nexusClient.DailyRequestLimitsChanged += OnNexusDailyLimitsChanged;
+                oldClient.DailyRequestLimitsChanged -= NexusDailyLimitsChanged;
+                _viewModel.NexusStatus = Program.translation.Get("internal.disconnected");
+                _viewModel.ShowEndorsements = false;
+                _viewModel.ShowInstalls = false;
+            }
+            
+            if (newClient is not null)
+            {
+                newClient.DailyRequestLimitsChanged += NexusDailyLimitsChanged;
 
                 // Verify NXM protocol usage
                 if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) && NXMProtocol.Validate(Program.executablePath) is false)
                 {
-                    await VerifyNxmProtocol();
+                    var requestWindow = new MessageWindow(Program.translation.Get("ui.message.confirm_nxm_association"));
+                    if (await requestWindow.ShowDialog<bool>(this))
+                    {
+                        if (NXMProtocol.Register(Program.executablePath) is false)
+                        {
+                            await new WarningWindow(Program.translation.Get("ui.warning.failed_to_set_association"), Program.translation.Get("internal.ok")).ShowDialog(this);
+                        }
+                    }
                 }
-            }            
+            }
         }
 
-        private void OnNexusDailyLimitsChanged(object? sender, EventArgs e)
+        private void NexusDailyLimitsChanged(object? sender, EventArgs e)
         {
             NexusClient? client = sender as NexusClient;
             if (client is not null)
@@ -2038,19 +2050,6 @@ namespace Stardrop.Views
                 _viewModel.NexusStatus = Program.translation.Get("internal.connected");
                 _viewModel.NexusLimits = $"(Remaining Daily Requests: {client.DailyRequestsRemaining}) ";
             }
-        }
-
-        private void DisconnectFromNexus()
-        {
-            if (Nexus.Client is not null)
-            {
-                Nexus.Client.DailyRequestLimitsChanged -= OnNexusDailyLimitsChanged;
-                Nexus.ClearClient();
-            }
-
-            _viewModel.NexusStatus = Program.translation.Get("internal.disconnected");
-            _viewModel.ShowEndorsements = false;
-            _viewModel.ShowInstalls = false;
         }
 
         private void AdjustWindowState()

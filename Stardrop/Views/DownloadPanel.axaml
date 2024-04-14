@@ -30,6 +30,7 @@
     </UserControl.Styles>
     
     <ScrollViewer>
+        <!--TODO: Some UI to show when Downloads is empty-->
         <ItemsRepeater x:Name="DownloadItems" Items="{Binding Downloads}">
             <ItemsRepeater.ItemTemplate>
                 <DataTemplate DataType="vm:ModDownloadViewModel">
