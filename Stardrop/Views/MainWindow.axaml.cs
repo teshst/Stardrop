@@ -1692,6 +1692,7 @@ namespace Stardrop.Views
 
         private void UpdateLockWindow(string? lockReason = null, int? progress = null, int? maxProgress = null)
         {
+            Program.helper.Log($"Attempting to update lock window with the following parameters: {lockReason} {progress} {maxProgress}");
             if (_viewModel.IsLocked is false)
             {
                 return;
@@ -1702,6 +1703,8 @@ namespace Stardrop.Views
             {
                 return;
             }
+
+            Program.helper.Log($"Successfully updated lock window!");
             lockWindow.UpdateProgress(lockReason, progress, maxProgress);
         }
 
