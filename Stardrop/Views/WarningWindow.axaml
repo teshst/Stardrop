@@ -22,7 +22,14 @@
 		<Style Selector="Button:pressed /template/ ContentPresenter">
 			<Setter Property="Background" Value="{DynamicResource HighlightBrush}"/>
 		</Style>
+		<Style Selector="ProgressBar /template/ TextBlock">
+			<Setter Property="FontWeight" Value="ExtraBold"/>
+		</Style>
 	</Window.Styles>
+	
+	<Window.Resources>
+		<StaticResource x:Key="SystemControlForegroundBaseHighBrush" ResourceKey="ThemeForegroundHighBrush"/>
+	</Window.Resources>
 	
 	<Border BorderBrush="{DynamicResource HighlightBrush}" BorderThickness="1">
 		<Grid>
