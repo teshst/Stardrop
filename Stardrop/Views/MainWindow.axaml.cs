@@ -85,16 +85,16 @@ namespace Stardrop.Views
             // Set the application's position and size
             if (localDataCache.LastSessionData is not null)
             {
-                Program.helper.Log($"Setting window size according to settings: {localDataCache.LastSessionData.Width}x{localDataCache.LastSessionData.Height} ({localDataCache.LastSessionData.PositionX} ,{localDataCache.LastSessionData.PositionY})");
+                Program.helper.Log($"Setting window size according to settings: {localDataCache.LastSessionData.Width}x{localDataCache.LastSessionData.Height} ({localDataCache.LastSessionData.PositionX}, {localDataCache.LastSessionData.PositionY})");
 
-                this.Width = localDataCache.LastSessionData.Width;
-                this.Height = localDataCache.LastSessionData.Height;
-
-                this.WindowStartupLocation = WindowStartupLocation.Manual;
                 /*
-                this.Position = new PixelPoint(localDataCache.LastSessionData.PositionX, localDataCache.LastSessionData.PositionY);
+                    this.Width = localDataCache.LastSessionData.Width;
+                    this.Height = localDataCache.LastSessionData.Height;
 
+                    this.WindowStartupLocation = WindowStartupLocation.Manual;
                 */
+
+                this.Position = new PixelPoint(localDataCache.LastSessionData.PositionX, localDataCache.LastSessionData.PositionY);
             }
 
             // Sets the grid's column visibility, based on previous session
