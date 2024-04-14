@@ -436,6 +436,8 @@ namespace Stardrop.Views
         {
             if (this.OwnedWindows.Any(w => w is WarningWindow) is false && _viewModel.IsLocked && String.IsNullOrEmpty(_lockReason) is false)
             {
+                Program.helper.Log($"Detected lock state request ({_lockReason}): Locking main window!");
+
                 var warningWindow = new WarningWindow(_lockReason, _viewModel);
                 warningWindow.WindowStartupLocation = WindowStartupLocation.CenterOwner;
                 await warningWindow.ShowDialog(this);
@@ -1950,8 +1952,12 @@ namespace Stardrop.Views
         private async void CheckForNexusConnection()
         {
             var apiKey = Nexus.GetKey();
+            Program.helper.Log($"Attempting to check for Nexus Mods connection (Has Key: {string.IsNullOrEmpty(apiKey) is false}");
+
             if (String.IsNullOrEmpty(apiKey) is false && await Nexus.ValidateKey(apiKey))
             {
+                Program.helper.Log($"Nexus Mods connection established.");
+
                 _viewModel.NexusStatus = Program.translation.Get("internal.connected");
                 _viewModel.NexusLimits = $"(Remaining Daily Requests: {Nexus.dailyRequestsRemaining}) ";
 
@@ -1966,6 +1972,8 @@ namespace Stardrop.Views
             }
             else
             {
+                Program.helper.Log($"Nexus Mods connection failed.");
+
                 Program.settings.NexusDetails = new Models.Nexus.NexusUser();
 
                 _viewModel.NexusStatus = Program.translation.Get("internal.disconnected");
