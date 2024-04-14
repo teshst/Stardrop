@@ -25,6 +25,8 @@ namespace Stardrop.Views
 
         public MessageWindow(string messageText, string? positiveButtonText = null, string? negativeButtonText = null) : this()
         {
+            Program.helper.Log($"Created a message window with the following text: [{positiveButtonText} | {negativeButtonText}] {messageText}");
+
             _viewModel.MessageText = messageText;
             _viewModel.PositiveButtonText = String.IsNullOrEmpty(positiveButtonText) ? Program.translation.Get("internal.yes") : positiveButtonText;
             _viewModel.NegativeButtonText = String.IsNullOrEmpty(negativeButtonText) ? Program.translation.Get("internal.no") : negativeButtonText;

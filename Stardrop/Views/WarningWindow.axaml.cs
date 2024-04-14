@@ -33,11 +33,11 @@ namespace Stardrop.Views
 
         public WarningWindow(string warningText, string buttonText) : this()
         {
+            Program.helper.Log($"Created a warning window with the following text: [{buttonText}] {warningText}");
+
             _viewModel.WarningText = warningText;
             _viewModel.ButtonText = buttonText;
             _viewModel.IsButtonVisible = true;
-
-            Program.helper.Log($"Created a warning window with the following text: [{buttonText}] {warningText}");
         }
 
         public WarningWindow(string warningText, string buttonText, bool closeOnExitSMAPI) : this(warningText, buttonText)

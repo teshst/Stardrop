@@ -44,6 +44,9 @@ namespace Stardrop.Views
 
         private string _lockReason;
 
+        // Session related
+        private LastSessionData _lastSessionDate;
+
         public MainWindow()
         {
             InitializeComponent();
@@ -85,11 +88,7 @@ namespace Stardrop.Views
             // Set the application's position and size
             if (localDataCache.LastSessionData is not null)
             {
-                this.Width = localDataCache.LastSessionData.Width;
-                this.Height = localDataCache.LastSessionData.Height;
-                this.Position = new PixelPoint(localDataCache.LastSessionData.PositionX, localDataCache.LastSessionData.PositionY);
-
-                this.WindowStartupLocation = WindowStartupLocation.Manual;
+                _lastSessionDate = localDataCache.LastSessionData;
             }
 
             // Sets the grid's column visibility, based on previous session
@@ -196,6 +195,8 @@ namespace Stardrop.Views
                 StartSMAPI();
             }
 
+            Program.helper.Log($"Initialization complete!");
+
 #if DEBUG
             this.AttachDevTools();
 #endif
@@ -275,6 +276,24 @@ namespace Stardrop.Views
 
         private async void MainWindow_Opened(object? sender, EventArgs e)
         {
+            if (_lastSessionDate is not null)
+            {
+                try
+                {
+                    Program.helper.Log($"Setting window size according to settings: {_lastSessionDate.Width}x{_lastSessionDate.Height} ({_lastSessionDate.PositionX}, {_lastSessionDate.PositionY})");
+
+                    this.Width = _lastSessionDate.Width;
+                    this.Height = _lastSessionDate.Height;
+                    this.Position = new PixelPoint(_lastSessionDate.PositionX, _lastSessionDate.PositionY);
+
+                    this.WindowStartupLocation = WindowStartupLocation.Manual;
+                }
+                catch (Exception ex)
+                {
+                    Program.helper.Log($"Failed to restore window settings!");
+                }
+            }
+
             // Check for Stardrop updates
             await HandleStardropUpdateCheck();
 
@@ -411,7 +430,7 @@ namespace Stardrop.Views
             }
             catch (IOException ex)
             {
-                //Program.helper.Log($"Unable to access the Links.json file");
+                Program.helper.Log($"Unable to access the Links.json file");
                 return;
             }
             catch (Exception ex)
@@ -436,6 +455,8 @@ namespace Stardrop.Views
         {
             if (this.OwnedWindows.Any(w => w is WarningWindow) is false && _viewModel.IsLocked && String.IsNullOrEmpty(_lockReason) is false)
             {
+                Program.helper.Log($"Detected lock state request ({_lockReason}): Locking main window!");
+
                 var warningWindow = new WarningWindow(_lockReason, _viewModel);
                 warningWindow.WindowStartupLocation = WindowStartupLocation.CenterOwner;
                 await warningWindow.ShowDialog(this);
@@ -1203,6 +1224,8 @@ namespace Stardrop.Views
 
         private async Task DisplaySettingsWindow()
         {
+            Program.helper.Log($"Opening settings window");
+
             var editorWindow = new SettingsWindow();
             editorWindow.WindowStartupLocation = WindowStartupLocation.CenterOwner;
             if (await editorWindow.ShowDialog<bool>(this))
@@ -1690,6 +1713,7 @@ namespace Stardrop.Views
 
         private void UpdateLockWindow(string? lockReason = null, int? progress = null, int? maxProgress = null)
         {
+            Program.helper.Log($"Attempting to update lock window with the following parameters: {lockReason} {progress} {maxProgress}");
             if (_viewModel.IsLocked is false)
             {
                 return;
@@ -1700,6 +1724,8 @@ namespace Stardrop.Views
             {
                 return;
             }
+
+            Program.helper.Log($"Successfully updated lock window!");
             lockWindow.UpdateProgress(lockReason, progress, maxProgress);
         }
 
@@ -1950,8 +1976,12 @@ namespace Stardrop.Views
         private async void CheckForNexusConnection()
         {
             var apiKey = Nexus.GetKey();
+            Program.helper.Log($"Attempting to check for Nexus Mods connection (Has Key: {string.IsNullOrEmpty(apiKey) is false})");
+
             if (String.IsNullOrEmpty(apiKey) is false && await Nexus.ValidateKey(apiKey))
             {
+                Program.helper.Log($"Nexus Mods connection established.");
+
                 _viewModel.NexusStatus = Program.translation.Get("internal.connected");
                 _viewModel.NexusLimits = $"(Remaining Daily Requests: {Nexus.dailyRequestsRemaining}) ";
 
@@ -1966,6 +1996,8 @@ namespace Stardrop.Views
             }
             else
             {
+                Program.helper.Log($"Nexus Mods connection failed.");
+
                 Program.settings.NexusDetails = new Models.Nexus.NexusUser();
 
                 _viewModel.NexusStatus = Program.translation.Get("internal.disconnected");
@@ -2098,6 +2130,8 @@ namespace Stardrop.Views
 
         private void DeleteMod(Mod mod)
         {
+            Program.helper.Log($"Attempting to delete the mod {mod.Name}");
+
             var targetDirectory = new DirectoryInfo(mod.ModFileInfo.DirectoryName);
             if (targetDirectory is not null && targetDirectory.Exists)
             {
@@ -2107,11 +2141,15 @@ namespace Stardrop.Views
 
         private async Task<List<Mod>> AddMods(string[]? filePaths)
         {
+            Guid request = new Guid();
+
             // Wait until current lock is finished before doing further installs
+            Program.helper.Log($"Add mods request received ({request}): Pending");
             while (_viewModel.IsLocked)
             {
                 await Task.Delay(500);
             }
+            Program.helper.Log($"Add mods request received ({request}): Accepted");
 
             await HandleModListRefresh();
 
@@ -2330,6 +2368,7 @@ namespace Stardrop.Views
             // Update the current profile
             UpdateProfile(GetCurrentProfile());
 
+            Program.helper.Log($"Add mods request received ({request}): Processed");
             return addedMods;
         }
 
