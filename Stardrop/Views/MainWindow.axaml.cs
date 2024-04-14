@@ -85,6 +85,7 @@ namespace Stardrop.Views
             // Set the application's position and size
             if (localDataCache.LastSessionData is not null)
             {
+                Program.helper.Log($"Setting window size according to settings: {localDataCache.LastSessionData.Width}x{localDataCache.LastSessionData.Height} ({localDataCache.LastSessionData.PositionX} ,{localDataCache.LastSessionData.PositionY})");
                 this.Width = localDataCache.LastSessionData.Width;
                 this.Height = localDataCache.LastSessionData.Height;
                 this.Position = new PixelPoint(localDataCache.LastSessionData.PositionX, localDataCache.LastSessionData.PositionY);
@@ -2124,11 +2125,15 @@ namespace Stardrop.Views
 
         private async Task<List<Mod>> AddMods(string[]? filePaths)
         {
+            Guid request = new Guid();
+
             // Wait until current lock is finished before doing further installs
+            Program.helper.Log($"Add mods request received ({request}): Pending");
             while (_viewModel.IsLocked)
             {
                 await Task.Delay(500);
             }
+            Program.helper.Log($"Add mods request received ({request}): Accepted");
 
             await HandleModListRefresh();
 
@@ -2347,6 +2352,7 @@ namespace Stardrop.Views
             // Update the current profile
             UpdateProfile(GetCurrentProfile());
 
+            Program.helper.Log($"Add mods request received ({request}): Processed");
             return addedMods;
         }
 
