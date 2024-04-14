@@ -31,7 +31,11 @@
     
     <ScrollViewer>
         <!--TODO: Some UI to show when Downloads is empty-->
-        <ItemsRepeater x:Name="DownloadItems" Items="{Binding Downloads}">
+        <ItemsRepeater x:Name="DownloadItems" 
+                       Items="{Binding Downloads}">
+            <ItemsRepeater.Layout>
+                <StackLayout Spacing="10"/>
+            </ItemsRepeater.Layout>
             <ItemsRepeater.ItemTemplate>
                 <DataTemplate DataType="vm:ModDownloadViewModel">
                     <Grid RowDefinitions="Auto, Auto, Auto">
@@ -39,6 +43,8 @@
                         <TextBlock Grid.Row="0" Text="{Binding Name}"/>
 
                         <Grid Grid.Row="1" ColumnDefinitions="8*, 2*, Auto">
+                            
+                            <!--TODO: Change color on error-->
                             <ProgressBar Grid.Column="0"                                         
                                          Minimum="0" Maximum="100"
                                          IsIndeterminate="{Binding IsSizeUnknown}"
@@ -49,11 +55,13 @@
                                        VerticalAlignment="Center"
                                        TextAlignment="Right"
                                        Text="{Binding Completion, StringFormat='{}{0:0.##}%'}"/>
+                            <!--TODO: Tooltip-->
                             <Button x:Name="CancelButton" 
                                     Grid.Row="1" Grid.Column="2" 
                                     i:Attached.Icon="mdi-cancel"
                                     Command="{Binding CancelCommand}"
                                     IsVisible="{Binding !IsDownloadEnded}"/>
+                            <!--TODO: Tooltip-->
                             <Button x:Name="RemoveButton"
                                     Grid.Row="1" Grid.Column="2"
                                     i:Attached.Icon="mdi-close"
@@ -63,12 +71,17 @@
 
                         <TextBlock x:Name="SpeedText" 
                                    Grid.Row="2" 
-                                   Text="{Binding DownloadSpeedLabel}"/>
+                                   Text="{Binding DownloadSpeedLabel}"
+                                   IsVisible="{Binding !IsDownloadEnded}"/>
                         <TextBlock x:Name="DownloadProgressText" 
                                    Grid.Row="2" 
                                    HorizontalAlignment="Right" 
                                    TextAlignment="Right"
                                    Text="{Binding DownloadProgressLabel}"/>
+                        <TextBlock x:Name="DownloadCompletionStatusText"
+                                   Grid.Row="2"
+                                   Text="{Binding DownloadCompletionStatusText}"
+                                   IsVisible="{Binding IsDownloadEnded}"/>
                         
                     </Grid>
                 </DataTemplate>

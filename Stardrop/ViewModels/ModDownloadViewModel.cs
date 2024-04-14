@@ -1,4 +1,5 @@
-﻿using ReactiveUI;
+﻿using Avalonia.Threading;
+using ReactiveUI;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -21,9 +22,10 @@ namespace Stardrop.ViewModels
 
     public class ModDownloadViewModel : ViewModelBase
     {
-        private DateTimeOffset _startTime;
-        private CancellationTokenSource _downloadCancellationSource;
+        private readonly DateTimeOffset _startTime;
+        private readonly CancellationTokenSource _downloadCancellationSource;
 
+        // Communicates up to the parent panel that the user wants to remove this download from the list.
         public event EventHandler? RemovalRequested = null!;
 
         private Uri _modUri;
@@ -40,6 +42,9 @@ namespace Stardrop.ViewModels
 
         private ModDownloadStatus _downloadStatus = ModDownloadStatus.NotStarted;
         public ModDownloadStatus DownloadStatus { get => _downloadStatus; set => this.RaiseAndSetIfChanged(ref _downloadStatus, value); }
+
+        private ObservableAsPropertyHelper<string> _downloadCompletionStatusText = null!;
+        public string DownloadCompletionStatusText => _downloadCompletionStatusText.Value;
 
         private readonly ObservableAsPropertyHelper<double> _completion = null!;
         public double Completion => _completion.Value;
@@ -85,15 +90,31 @@ namespace Stardrop.ViewModels
                     || x == ModDownloadStatus.Failed)
                 .ToProperty(this, x => x.IsDownloadEnded, out _isDownloadEnded);
 
+            // DownloadStatus to DownloadCompletionStatusText conversion
+            this.WhenAnyValue(x => x.DownloadStatus)
+                .Select(x =>
+                {
+                    return x switch
+                    {
+                        ModDownloadStatus.Canceled => Program.translation.Get("ui.downloads_panel.download_canceled"),
+                        ModDownloadStatus.Failed => Program.translation.Get("ui.downloads_panel.download_failed"),
+                        ModDownloadStatus.Successful => Program.translation.Get("ui_downloads_panel.download_success"),
+                        // The label isn't visible in these states, so the value we return doesn't matter
+                        _ => ""
+                    };
+                }).ToProperty(this, x => x.DownloadCompletionStatusText, out _downloadCompletionStatusText);
+
             if (SizeBytes.HasValue)
             {
                 // DownloadedBytes to Completion conversion
                 this.WhenAnyValue(x => x.DownloadedBytes)
+                    .Sample(TimeSpan.FromMilliseconds(500), RxApp.MainThreadScheduler)
                     .Select(x => (DownloadedBytes / (double)SizeBytes) * 100)
                     .ToProperty(this, x => x.Completion, out _completion);
 
                 // DownloadedBytes to DownloadSpeedLabel conversion
                 this.WhenAnyValue(x => x.DownloadedBytes)
+                    .Sample(TimeSpan.FromMilliseconds(500), RxApp.MainThreadScheduler)
                     .Select(bytes =>
                     {
                         double elapsedSeconds = (DateTimeOffset.UtcNow - _startTime).TotalSeconds;
@@ -114,10 +135,11 @@ namespace Stardrop.ViewModels
 
                 // DownloadedBytes and SizeBytes to DownloadProgressLabel conversion
                 this.WhenAnyValue(x => x.DownloadedBytes, x => x.SizeBytes)
-                    .Select( ((long Bytes, long? Total) x) =>
+                    .Sample(TimeSpan.FromMilliseconds(500), RxApp.MainThreadScheduler)
+                    .Select(((long Bytes, long? Total) x) =>
                     {
                         string bytesString = ToHumanReadable(x.Bytes);
-                        string totalString = ToHumanReadable(x.Total!.Value);                 
+                        string totalString = ToHumanReadable(x.Total!.Value);
                         return $"{bytesString} / {totalString}";
 
                         static string ToHumanReadable(long bytes)

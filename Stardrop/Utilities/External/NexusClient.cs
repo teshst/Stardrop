@@ -423,10 +423,15 @@ namespace Stardrop.Utilities.External
             }
             catch (Exception ex)
             {
-                // TODO: If this is a TaskCanceledException, return some different value, and don't fire
-                // a failed event
-                Program.helper.Log($"Failed to download mod file for Nexus Mods: {ex}", Helper.Status.Alert);
-                DownloadFailed?.Invoke(this, new ModDownloadFailedEventArgs(requestUri));
+                if (ex is TaskCanceledException)
+                {
+                    Program.helper.Log($"The user canceled the download from Nexus from URL {uri}", Helper.Status.Info);
+                }
+                else
+                {
+                    Program.helper.Log($"Failed to download mod file for Nexus Mods: {ex}", Helper.Status.Alert);
+                    DownloadFailed?.Invoke(this, new ModDownloadFailedEventArgs(requestUri));
+                }
                 return null;
             }            
         }
