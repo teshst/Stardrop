@@ -89,10 +89,11 @@ namespace Stardrop.Views
 
                 this.Width = localDataCache.LastSessionData.Width;
                 this.Height = localDataCache.LastSessionData.Height;
+
+                this.WindowStartupLocation = WindowStartupLocation.Manual;
                 /*
                 this.Position = new PixelPoint(localDataCache.LastSessionData.PositionX, localDataCache.LastSessionData.PositionY);
 
-                this.WindowStartupLocation = WindowStartupLocation.Manual;
                 */
             }
 
