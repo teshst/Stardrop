@@ -1,11 +1,12 @@
 {
   // Main Window - Menu Items
   "ui.main_window.menu_items.add_mod": "Adicionar mod",
+  "ui.main_window.menu_items.add_mods": "Adcionar mods",
   "ui.main_window.menu_items.start_smapi": "Iniciar SMAPI",
   "ui.main_window.menu_items.exit": "Sair",
   "ui.main_window.menu_items.settings": "Configurações",
-  "ui.main_window.menu_items.stardrop_log_file": "Arquivo de registros do Stardrop",
-  "ui.main_window.menu_items.smapi_log_file": "Arquivo de registros do SMAPI",
+  "ui.main_window.menu_items.stardrop_log_file": "Arquivo de log do Stardrop",
+  "ui.main_window.menu_items.smapi_log_file": "Arquivo de log do SMAPI",
   "ui.main_window.menu_items.refresh_mod_list": "Atualizar a lista de mods",
   "ui.main_window.menu_items.check_for_mod_updates": "Verificar atualizações dos mods",
   "ui.main_window.menu_items.enable_all_mods": "Habilitar todos os mods",
@@ -17,11 +18,18 @@
   "ui.main_window.menu_items.check_for_SMAPI_update": "Verificar atualizações do SMAPI",
 
   // Main Window - Menu Items - Context
-  "ui.main_window.menu_items.context.show_requirements": "Exibir requisitos",
+  "ui.main_window.menu_items.context.columns.show_hide": "Exibir/ocultar colunas",
   "ui.main_window.menu_items.context.hide_requirements": "Ocultar requisitos",
   "ui.main_window.menu_items.context.cancel": "Cancelar",
   "ui.main_window.menu_items.context.open_containing_folder": "Abrir pasta do mod",
   "ui.main_window.menu_items.context.open_mod_page": "Abrir página do mod",
+  "ui.main_window.menu_items.context.open_config": "Abrir arquivo de ocnfiguração",
+  "ui.main_window.menu_items.context.show_whole_mod_group": "Exibir o grupo inteiro do mod",
+  "ui.main_window.menu_items.context.show_authors_mods": "Exibir os mods do autor",
+  "ui.main_window.menu_items.context.open": "Abrir...",
+  "ui.main_window.menu_items.context.filters": "Filtros",
+  "ui.main_window.menu_items.context.options": "Opções",
+  "ui.main_window.menu_items.context.clear_filter": "Limpar",
   "ui.main_window.menu_items.context.delete": "Excluir",
 
   // Main Window - Menu Headers
@@ -41,6 +49,8 @@
   "ui.main_window.menu_headers.status": "Status",
   "ui.main_window.menu_headers.endorsement": "Endosso",
   "ui.main_window.menu_headers.nexus_install": "Atualizações de mods do Nexus",
+  "ui.main_window.menu_headers.install_timestamp": "Horário da instalação",
+  "ui.main_window.menu_headers.last_updated": "Última atualização",
 
   // Main Window - Labels
   "ui.main_window.labels.profile": "Perfil",
@@ -61,21 +71,28 @@
 
   // Main Window - Buttons
   "ui.main_window.buttons.save_configs": "Salvar configurações",
-  "ui.main_window.buttons.hide_disabled_mods": "Ocultar mods desabilitados",
+  "ui.main_window.buttons.save_profile": "Salvar perfil",
   "ui.main_window.buttons.show_updatable_mods": "Exibir mods atualizáveis",
+  "ui.main_window.buttons.active_search_filters": "{0} filtro(s) ativo(s)",
+  "ui.main_window.buttons.no_search_filters": "Nenhum filtro ativo",
 
   // Main Window - Buttons - Update Status
-  "ui.main_window.button.update_status.generic": "Mods prontos para atualização: Clique para verificar novamente",
+  "ui.main_window.button.update_status.generic": "Clique para procurar por atualizações de mods",
   "ui.main_window.button.update_status.updating": "Atualizando...",
   "ui.main_window.button.update_status.list_available_updates": "Mods prontos para atualizar: {0}",
   "ui.main_window.button.update_status.failed": "Falha na verificação de atualizações",
 
   // Main Window - ComboBox
   "ui.main_window.combobox.show_all_mods": "Exibir todos os mods",
-  "ui.main_window.combobox.hide_enabled_mods": "Ocultar todos os mods",
+  "ui.main_window.combobox.show_mods_with_configs": "Exibir mods configuráveis",
+  "ui.main_window.combobox.show_disabled_mods": "Exibir mods desabilitados",
+  "ui.main_window.combobox.show_enabled_mods": "Exibir mods habilitados",
+  
+  // Main Window - ComboBox (ListBox)
   "ui.main_window.combobox.mod_name": "Nome do mod",
   "ui.main_window.combobox.author": "Autor",
   "ui.main_window.combobox.requirements": "Requisitos",
+  "ui.main_window.combobox.group": "Grupo do mod",
 
   // Settings Window - Labels
   "ui.settings_window.labels.smapi_path": "Caminho do SMAPI",
@@ -83,6 +100,7 @@
   "ui.settings_window.labels.mod_install": "Caminho dos mods instalados pelo Stardrop",
   "ui.settings_window.labels.themes": "Temas",
   "ui.settings_window.labels.languages": "Idiomas",
+  "ui.settings_window.labels.grouping": "Agrupamento de mods",
   "ui.settings_window.labels.miscellaneous": "Diversos",
   "ui.settings_window.labels.nexus": "Mods do Nexus",
   "ui.settings_window.labels.preferred_server": "Servidor preferencial:",
@@ -91,6 +109,8 @@
   "ui.settings_window.buttons.ignore_hidden_folders": "Ignorar pastas ocultas",
   "ui.settings_window.buttons.enable_profile_specific_mod_configs": "Habilitar configurações de mods específicas por perfil",
   "ui.settings_window.buttons.enable_mods_on_add": "Habilitar os mods automaticamente ao instalar",
+  "ui.settings_window.buttons.always_ask_to_delete": "Sempre perguntar quando for excluir arquivos de mod na atualização",
+  "ui.settings_window.buttons.automatically_save_profile_changes": "Salvar alterações do perfil automaticamente",
   "ui.settings_window.buttons.always_ask_for_NXM_installs": "Sempre perguntar antes de instalar arquivos NXM",
   "ui.settings_window.buttons.register_nxm_association": "Registrar associação NXM",
 
@@ -100,11 +120,14 @@
   "ui.settings_window.tooltips.mod_install_path": "O caminho da pasta na qual o Stardrop colocará os novos mods instalados. Deve estar dentro da pasta definida em \"Caminho da pasta dos mods\".",
   "ui.settings_window.tooltips.theme": "O tema atual do Stardrop",
   "ui.settings_window.tooltips.language": "O idioma atual do Stardrop",
+  "ui.settings_window.tooltips.grouping": "O método atual para agrupar mods",
   "ui.settings_window.tooltips.ignore_hidden_folders": "Se estiver marcado, o Stardrop irá ignorar qualquer mod cuja pasta raiz comece com \".\"",
   "ui.settings_window.tooltips.nxm_file_association": "Registra a associação do protocolo NXM com o Stardrop, permitindo instalações diretas a partir de www.nexusmods.com",
   "ui.settings_window.tooltips.always_ask_nxm_files": "Se estiver marcado, o Stardrop sempre perguntará antes de instalar um mod de www.nexusmods.com via NXM",
   "ui.settings_window.tooltips.enable_profile_specific_configs": "Se estiver marcado, o Stardrop irá salvar e restaurar arquivos config.json dos mods, ao alterar o perfil",
   "ui.settings_window.tooltips.enable_mods_on_add": "Se estiver marcado, o Stardrop habilitará, automaticamente, mods novos ou atualizados",
+  "ui.settings_window.tooltips.always_ask_to_delete": "Se esiver marcado, o Stardrop sempre perguntará de deve excluir arquivos do mod ao atualizar o mod",
+  "ui.settings_window.tooltips.automatically_save_profile_changes": "Se estiver marcado, o Stardrop salvará automaticamente as alterações feitas no perfil",
   "ui.settings_window.tooltips.preferred_server": "Define o seu servidor preferencial usado para baixar mods do Nexus",
   "ui.settings_window.tooltips.save_changes": "Salvar alterações",
   "ui.settings_window.tooltips.cancel_changes": "Cancelar",
@@ -140,8 +163,12 @@
   "ui.warning.SMAPI_downloading": "Baixando a última versão do SMAPI no GitHub.",
   "ui.warning.SMAPI_installing": "Atualizando o SMAPI para a última versão.",
   "ui.warning.SMAPI_up_to_date": "O SMAPI está atualizado.\n\n{0} é a última versão.",
+  "ui.warning.install_mod_attempt_count": "Tentando instalar {0} mod(s)",
   "ui.warning.mod_installing": "Instalando {0}",
   "ui.warning.mod_updating": "Atualizando {0}",
+  "ui.warning.mod_deleting": "Excluindo instâncias antigas de {0}",
+  "ui.warning.failed_to_delete": "Não foi possível excluir {0}.\n\nOs arquivos do mod podem estar travados, veja o log para mais detalhes.",
+  "ui.warning.failed_to_delete_during_update": "Não foi possível excluir a instância antiga de {0}.\n\nO mod pode ser instalado incorretamente.",
 
   "ui.warning.unable_to_locate_smapi": "Não foi possível localizar o StardewModdingAPI.exe\n\nPor favor, defina o caminho correto do arquivo em\nVer > Configurações",
   "ui.warning.mod_config_saved_but_not_enabled": "As configurações do mod foram salvas no perfil {0}, entretanto, a opção de configurações específicas de mods por perfil não está habilitada.\n\nVá até Ver > Configurações e marque a opção \"Habilitar configurações de mods específicas por perfil\" para que o Stardrop salve e aplique as alterações nas configurações dos mods automaticamente.",
@@ -155,9 +182,9 @@
   "ui.warning.update_cooldown_minutes": "Atualizações só podem ser solicitadas a cada 5 minutos.\n\nPor favor, tente novamente em {0} minuto(s).",
   "ui.warning.update_cooldown_seconds": "Atualizações só podem ser solicitadas a cada 5 minutos.\n\nPor favor, tente novamente em {0} segundo(s).",
   "ui.warning.unable_to_locate_log": "Não foi possível localizar o SMAPI-latest.txt! É necessário que o SMAPI seja executado corretamente ao menos uma vez para que o Stardrop detecte os detalhes do jogo.",
-  "ui.warning.unable_to_read_log": "Não foi possível ler o arquivo de registros do SMAPI, para obter a versão do jogo.\n\nNão será possível fazer a verificação de atualizações dos mods.",
+  "ui.warning.unable_to_read_log": "Não foi possível ler o arquivo de log do SMAPI, para obter a versão do jogo.\n\nNão será possível fazer a verificação de atualizações dos mods.",
   "ui.warning.no_manifest": "O manifest.json não foi encontrado em \"{0}\"",
-  "ui.warning.unable_to_load_mod": "Não foi possível abrir o arquivo localizado em \"{0}\".\n\nVeja o arquivo de registros para mais informações.",
+  "ui.warning.unable_to_load_mod": "Não foi possível abrir o arquivo localizado em \"{0}\".\n\nVeja o arquivo de log para mais informações.",
   "ui.warning.unable_to_validate_nexus_key": "Não foi possível validar a chave API do Nexus Mods.\n\nPor favor, verifique se a chave está correta e tente novamente.",
   "ui.warning.download_without_premium": "Você tem que ter uma filiação premium no Nexus Mods para baixar via Stardrop.",
   "ui.warning.no_downloads_available": "Atualmente não existem mods com atualizações disponíveis no Nexus Mods.",
@@ -187,7 +214,7 @@
   "ui.message.confirm_nxm_association": "Deseja associar o protocolo NXM ao Stardrop?\n\nIsso permitirá ao Stardrop instalar automaticamente mods baixados do Nexus Mods.",
   "ui.message.confirm_nxm_install": "Deseja instalar o seguinte módulo?\n\n{0}\n\nVocê pode desabilitar essa confirmação no menu de configurações.",
   "ui.message.require_nexus_login": "Essa ação requer que você esteja conectado à API do Nexus Mods.",
-  "ui.message.succeeded_nexus_install": "O mod seguinte foi instalado via Nexus Mods:\n\n{0}",
+  "ui.message.succeeded_nexus_install": "O mod seguinte foi instalado com sucesso via Nexus Mods:\n\n{0}",
 
   // Window Names
   "ui.window.settings.name": "Configurações",
@@ -203,6 +230,8 @@
   "internal.unknown": "Desconhecido",
   "internal.enable": "Habilitado",
   "internal.disable": "Desabilitado",
+  "internal.enable_whole_mod": "Habilitar o grupo inteiro do mod",
+  "internal.disable_whole_mod": "Desabilitar o grupo inteiro do mod",
   "internal.yes": "Sim",
   "internal.yes_all": "Sim para tudo",
   "internal.no": "Não",
