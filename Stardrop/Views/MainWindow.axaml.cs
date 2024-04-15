@@ -284,9 +284,13 @@ namespace Stardrop.Views
 
                     this.Width = _lastSessionDate.Width;
                     this.Height = _lastSessionDate.Height;
-                    this.Position = new PixelPoint(_lastSessionDate.PositionX, _lastSessionDate.PositionY);
 
-                    this.WindowStartupLocation = WindowStartupLocation.Manual;
+                    var screen = this.Screens.ScreenFromBounds(new PixelRect(_lastSessionDate.PositionX, _lastSessionDate.PositionY, (int)_lastSessionDate.Width, (int)_lastSessionDate.Height));
+                    if (screen is not null)
+                    {
+                        this.Position = new PixelPoint(_lastSessionDate.PositionX, _lastSessionDate.PositionY);
+                        this.WindowStartupLocation = WindowStartupLocation.Manual;
+                    }
                 }
                 catch (Exception ex)
                 {
