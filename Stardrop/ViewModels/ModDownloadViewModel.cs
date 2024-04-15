@@ -1,13 +1,9 @@
-﻿using Avalonia.Threading;
-using ReactiveUI;
+﻿using ReactiveUI;
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Reactive;
 using System.Reactive.Linq;
-using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
 
 namespace Stardrop.ViewModels
 {
@@ -28,8 +24,13 @@ namespace Stardrop.ViewModels
         // Communicates up to the parent panel that the user wants to remove this download from the list.
         public event EventHandler? RemovalRequested = null!;
 
-        private Uri _modUri;
-        public Uri ModUrl { get => _modUri; set => this.RaiseAndSetIfChanged(ref _modUri, value); }
+        // --Set-once properties--
+        public Uri ModUri { get; set; }
+
+        public string CancelButtonTooltip { get; set; } = Program.translation.Get("ui.downloads_panel.tooltips.cancel_button");
+        public string RemoveButtonTooltip { get; set; } = Program.translation.Get("ui.downloads_panel.tooltips.remove_button");
+
+        // --Bindable properties--
 
         private string _name;
         public string Name { get => _name; set => this.RaiseAndSetIfChanged(ref _name, value); }
@@ -42,6 +43,8 @@ namespace Stardrop.ViewModels
 
         private ModDownloadStatus _downloadStatus = ModDownloadStatus.NotStarted;
         public ModDownloadStatus DownloadStatus { get => _downloadStatus; set => this.RaiseAndSetIfChanged(ref _downloadStatus, value); }
+
+        // --Composite or dependent properties--
 
         private ObservableAsPropertyHelper<string> _downloadCompletionStatusText = null!;
         public string DownloadCompletionStatusText => _downloadCompletionStatusText.Value;
@@ -62,6 +65,8 @@ namespace Stardrop.ViewModels
         private readonly ObservableAsPropertyHelper<string> _downloadProgressLabel = null!;
         public string DownloadProgressLabel => _downloadProgressLabel.Value;
 
+        // --Commands--
+
         public ReactiveCommand<Unit, Unit> CancelCommand { get; }
         public ReactiveCommand<Unit, Unit> RemoveCommand { get; }
 
@@ -69,7 +74,7 @@ namespace Stardrop.ViewModels
         {
             _startTime = DateTimeOffset.UtcNow;
 
-            _modUri = modUri;
+            ModUri = modUri;
             _name = name;
             _sizeBytes = sizeInBytes;
             _downloadedBytes = 0;

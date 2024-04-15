@@ -2602,5 +2602,26 @@ namespace Stardrop.Views
 
             await DisplaySettingsWindow();
         }
+
+        // DEBUG STUFF AHHHH
+        private bool DEBUG_isFlyoutPinned = false;
+
+        private void ToggleButton_Checked_1(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+        {
+            DEBUG_isFlyoutPinned = true;
+        }
+
+        private void ToggleButton_Unchecked_2(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+        {
+            DEBUG_isFlyoutPinned = false;
+        }
+
+        private void Flyout_Closing_1(object? sender, System.ComponentModel.CancelEventArgs e)
+        {
+            if (DEBUG_isFlyoutPinned)
+            {
+                e.Cancel = true;
+            }
+        }
     }
 }

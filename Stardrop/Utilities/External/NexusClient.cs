@@ -423,6 +423,8 @@ namespace Stardrop.Utilities.External
             }
             catch (Exception ex)
             {
+                // Delete partially downloaded file, if any.
+                File.Delete(Path.Combine(Pathing.GetNexusPath(), fileName));
                 if (ex is TaskCanceledException)
                 {
                     Program.helper.Log($"The user canceled the download from Nexus from URL {uri}", Helper.Status.Info);

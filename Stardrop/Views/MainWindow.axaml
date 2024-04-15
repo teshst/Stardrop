@@ -38,6 +38,8 @@
         <Style Selector="FlyoutPresenter.DownloadBoxFlyout">
             <Setter Property="Background" Value="{DynamicResource ThemeBackgroundBrush}"/>
             <Setter Property="BorderBrush" Value="{DynamicResource HighlightBrush}"/>
+            <Setter Property="Cursor" Value="Arrow"/>
+            <Setter Property="Padding" Value="0"/>
         </Style>
 		<Style Selector="MenuItem.ColumnActive">
 			<Setter Property="i:MenuItem.Icon" Value="mdi-check-outline" />
@@ -649,12 +651,15 @@
 					<ColumnDefinition Width="Auto" />
 					<ColumnDefinition Width="Auto" />
 				</Grid.ColumnDefinitions>
-                <Button Name="statusBarButton" Content="{Binding UpdateStatusText}" Grid.Column="0" Classes="hyperlink" Click="ModUpdateCheck_Click" HorizontalAlignment="Left"/>
-                <!--Download button is gonna go here-->
+                <Button Name="statusBarButton" Content="{Binding UpdateStatusText}" Grid.Column="0" Classes="hyperlink" Click="ModUpdateCheck_Click" HorizontalAlignment="Left"/>                
                 <Button Name="downloadButton" Content="Downloads" Grid.Column="0" Classes="hyperlink" HorizontalAlignment="Center">
                     <Button.Flyout>
-                        <Flyout FlyoutPresenterClasses="DownloadBoxFlyout">
-							<view:DownloadPanel/>
+                        <Flyout FlyoutPresenterClasses="DownloadBoxFlyout" Closing="Flyout_Closing_1">
+                            <StackPanel>
+                                <!--<ToggleButton x:Name="DEBUG_DELETEME_PinFlyout" Content="Pin Flyout" Checked="ToggleButton_Checked_1" Unchecked="ToggleButton_Unchecked_2"/>
+                                <Button x:Name="DEBUG_DELETEME_ForceRepaint" Content="Repaint" Click="Button_Click_3"/>-->
+								<view:DownloadPanel x:Name="DownloadPanel" />
+                            </StackPanel>
                         </Flyout>
                     </Button.Flyout>
                 </Button>
