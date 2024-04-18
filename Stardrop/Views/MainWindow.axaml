@@ -652,13 +652,10 @@
 					<ColumnDefinition Width="Auto" />
 				</Grid.ColumnDefinitions>
                 <Button Name="statusBarButton" Content="{Binding UpdateStatusText}" Grid.Column="0" Classes="hyperlink" Click="ModUpdateCheck_Click" HorizontalAlignment="Left"/>                
-                <Button Name="downloadButton" Content="Downloads" Grid.Column="0" Classes="hyperlink" HorizontalAlignment="Center">
+                <Button Name="downloadButton" Content="{Binding DownloadsButtonText}" Grid.Column="0" Classes="hyperlink" HorizontalAlignment="Center">
                     <Button.Flyout>
-                        <Flyout FlyoutPresenterClasses="DownloadBoxFlyout" Closing="Flyout_Closing_1">
-                            <StackPanel>
-                                <ToggleButton x:Name="DEBUG_DELETEME_PinFlyout" Content="Pin Flyout" Checked="ToggleButton_Checked_1" Unchecked="ToggleButton_Unchecked_2"/>
-								<view:DownloadPanel x:Name="DownloadPanel" />
-                            </StackPanel>
+                        <Flyout FlyoutPresenterClasses="DownloadBoxFlyout">
+							<view:DownloadPanel x:Name="DownloadPanel" />
                         </Flyout>
                     </Button.Flyout>
                 </Button>

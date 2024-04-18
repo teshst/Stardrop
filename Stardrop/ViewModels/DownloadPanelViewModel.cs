@@ -1,4 +1,8 @@
 ﻿using Avalonia.Controls;
+using DynamicData;
+using DynamicData.Aggregation;
+using DynamicData.Alias;
+using DynamicData.Binding;
 using ReactiveUI;
 using Stardrop.Models.Data;
 using Stardrop.Utilities.External;
@@ -13,7 +17,9 @@ namespace Stardrop.ViewModels
         public string NoDownloadsLabel { get; init; } = Program.translation.Get("ui.downloads_panel.no_downloads_label");
 
         private ObservableCollection<ModDownloadViewModel> _downloads = new();
-        public ObservableCollection<ModDownloadViewModel> Downloads { get => _downloads; set => this.RaiseAndSetIfChanged(ref _downloads, value); }
+        public ObservableCollection<ModDownloadViewModel> Downloads { get => _downloads; set => this.RaiseAndSetIfChanged(ref _downloads, value); }        
+
+        public IObservable<int> InProgressDownloads { get; init; }
 
         public DownloadPanelViewModel(NexusClient? nexusClient)
         {
@@ -22,6 +28,14 @@ namespace Stardrop.ViewModels
             {
                 RegisterEventHandlers(nexusClient);
             }
+
+            // Count failed and canceled downloads toward this value, because those still need to be 
+            // handled in some way by the user
+            InProgressDownloads = Downloads
+                .ToObservableChangeSet(t => t.ModUri)
+                .AutoRefresh(x => x.DownloadStatus, scheduler: RxApp.MainThreadScheduler)
+                .Filter(x => x.DownloadStatus != ModDownloadStatus.Successful)
+                .Count();
         }
 
         private void NexusClientChanged(NexusClient? oldClient, NexusClient? newClient)
@@ -124,6 +138,7 @@ namespace Stardrop.ViewModels
             Downloads.Remove(downloadVM);
         }
 
+        // Designer-only constructor
         public DownloadPanelViewModel()
         {
             if (!Design.IsDesignMode)

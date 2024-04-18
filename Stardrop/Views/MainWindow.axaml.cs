@@ -4,6 +4,7 @@ using Avalonia.Input;
 using Avalonia.Markup.Xaml;
 using Avalonia.Threading;
 using DynamicData;
+using DynamicData.Binding;
 using Semver;
 using SharpCompress.Archives;
 using SharpCompress.Common;
@@ -336,6 +337,9 @@ namespace Stardrop.Views
                 await ProcessNXMLink(new NXM() { Link = Program.nxmLink, Timestamp = DateTime.Now });
                 Program.nxmLink = null;
             }
+
+            // Set up handler for listening to download count
+            SetupDownloadCountListener();
         }
 
         private async Task CreateWarningWindow(string warningText, string buttonText)
@@ -2586,11 +2590,6 @@ namespace Stardrop.Views
             }
         }
 
-        private void InitializeComponent()
-        {
-            AvaloniaXamlLoader.Load(this);
-        }
-
         private async Task<bool> ValidateSMAPIPath()
         {
             if (Program.settings.SMAPIFolderPath is not null && File.Exists(Pathing.GetSmapiPath()))
@@ -2615,25 +2614,31 @@ namespace Stardrop.Views
             await DisplaySettingsWindow();
         }
 
-        // DEBUG STUFF AHHHH
-        private bool DEBUG_isFlyoutPinned = false;
-
-        private void ToggleButton_Checked_1(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+        private void SetupDownloadCountListener()
         {
-            DEBUG_isFlyoutPinned = true;
-        }
-
-        private void ToggleButton_Unchecked_2(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
-        {
-            DEBUG_isFlyoutPinned = false;
-        }
-
-        private void Flyout_Closing_1(object? sender, System.ComponentModel.CancelEventArgs e)
-        {
-            if (DEBUG_isFlyoutPinned)
+            var downloadPanel = this.FindControl<DownloadPanel>("DownloadPanel");
+            if (downloadPanel is null)
             {
-                e.Cancel = true;
+                return;
             }
+
+            if (downloadPanel.DataContext is not DownloadPanelViewModel panelVM)
+            {
+                return;
+            }
+
+            // Initial value
+            _viewModel.DownloadsButtonText = String.Format(Program.translation.Get("ui.main_window.buttons.downloads.label"), 0);
+            // Change listener
+            panelVM.InProgressDownloads.Subscribe(count =>
+            {                
+                _viewModel.DownloadsButtonText = String.Format(Program.translation.Get("ui.main_window.buttons.downloads.label"), count);
+            });
+        }
+
+        private void InitializeComponent()
+        {
+            AvaloniaXamlLoader.Load(this);
         }
     }
 }
