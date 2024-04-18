@@ -1,4 +1,3 @@
-using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Markup.Xaml;
 using Avalonia.Media;
@@ -16,6 +15,8 @@ public partial class DownloadPanel : UserControl
         AvaloniaXamlLoader.Load(this);
         if (Design.IsDesignMode)
         {
+            // Normally, the background gets handled by the hosting flyout's FlyoutPresenterClasses
+            // Since design mode doesn't have a flyout to host this, we do it manually
             Background = new SolidColorBrush(new Color(0xFF, 0x03, 0x13, 0x32));
             return;
         }

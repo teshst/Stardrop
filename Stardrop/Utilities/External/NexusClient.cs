@@ -65,7 +65,7 @@ namespace Stardrop.Utilities.External
         /// <param name="apiKey">The API key from Nexus mods that will be included in the 'apiKey' header when making calls.</param>
         /// <returns>The created client, if successful. Null otherwise.</returns>
         public static async Task<NexusClient?> CreateClient(string apiKey)
-        {            
+        {
             HttpClient client = new HttpClient();
             client.BaseAddress = _baseUrl;
             client.DefaultRequestHeaders.Add("apiKey", apiKey);
@@ -94,7 +94,7 @@ namespace Stardrop.Utilities.External
         {
             ClientChanged?.Invoke(oldClient: Client, newClient: null);
             Client = null;
-        }   
+        }
     }
 
     public class NexusClient
@@ -107,7 +107,7 @@ namespace Stardrop.Utilities.External
         internal int DailyRequestsLimit { get; private set; }
         internal int DailyRequestsRemaining { get; private set; }
         internal event EventHandler? DailyRequestLimitsChanged = null;
-        internal event EventHandler<ModDownloadStartedEventArgs>? DownloadStarted = null;        
+        internal event EventHandler<ModDownloadStartedEventArgs>? DownloadStarted = null;
         internal event EventHandler<ModDownloadProgressEventArgs>? DownloadProgressChanged = null;
         internal event EventHandler<ModDownloadCompletedEventArgs>? DownloadCompleted = null;
         internal event EventHandler<ModDownloadFailedEventArgs>? DownloadFailed = null;
@@ -225,7 +225,7 @@ namespace Stardrop.Utilities.External
             catch (Exception ex)
             {
                 Program.helper.Log($"Unable to get mod details for the mod {modId} on Nexus Mods: {ex}", Helper.Status.Alert);
-            }            
+            }
 
             return null;
         }
@@ -297,7 +297,7 @@ namespace Stardrop.Utilities.External
             catch (Exception ex)
             {
                 Program.helper.Log($"Failed to get the mod file for Nexus Mods: {ex}", Helper.Status.Alert);
-            }            
+            }
 
             return null;
         }
@@ -375,24 +375,25 @@ namespace Stardrop.Utilities.External
             catch (Exception ex)
             {
                 Program.helper.Log($"Failed to get the download link for Nexus Mods: {ex}", Helper.Status.Alert);
-            }            
+            }
 
             return null;
         }
 
-        public async Task<string?> DownloadFileAndGetPath(string uri, string fileName)
+        public async Task<NexusDownloadResult> DownloadFileAndGetPath(string uri, string fileName)
         {
             var requestUri = new Uri(uri);
             var downloadCancellationSource = new CancellationTokenSource();
             var requestMessage = new HttpRequestMessage(HttpMethod.Get, requestUri);
             try
-            {                
-                var response = await _client.SendAsync(requestMessage, HttpCompletionOption.ResponseHeadersRead, downloadCancellationSource.Token);                
+            {
+
+                var response = await _client.SendAsync(requestMessage, HttpCompletionOption.ResponseHeadersRead, downloadCancellationSource.Token);
                 if (response.IsSuccessStatusCode is false)
                 {
                     Program.helper.Log($"Failed to download mod file for Nexus Mods: HTTP {response.StatusCode}, {response.ReasonPhrase}", Helper.Status.Alert);
-                    return null;
-                }                
+                    return new(DownloadResultKind.Failed, null);
+                }
 
                 using var fileStream = new FileStream(Path.Combine(Pathing.GetNexusPath(), fileName), FileMode.CreateNew);
                 using var downloadStream = await response.Content.ReadAsStreamAsync();
@@ -415,11 +416,11 @@ namespace Stardrop.Utilities.External
                         await fileStream.WriteAsync(buffer, downloadCancellationSource.Token);
                         totalBytesRead += bytesRead;
                         DownloadProgressChanged?.Invoke(this, new ModDownloadProgressEventArgs(requestUri, totalBytesRead));
-                    }                                        
+                    }
                 }
 
                 DownloadCompleted?.Invoke(this, new ModDownloadCompletedEventArgs(requestUri));
-                return Path.Combine(Pathing.GetNexusPath(), fileName);
+                return new(DownloadResultKind.Success, Path.Combine(Pathing.GetNexusPath(), fileName));
             }
             catch (Exception ex)
             {
@@ -428,14 +429,15 @@ namespace Stardrop.Utilities.External
                 if (ex is TaskCanceledException)
                 {
                     Program.helper.Log($"The user canceled the download from Nexus from URL {uri}", Helper.Status.Info);
+                    return new(DownloadResultKind.UserCanceled, null);
                 }
                 else
                 {
                     Program.helper.Log($"Failed to download mod file for Nexus Mods: {ex}", Helper.Status.Alert);
                     DownloadFailed?.Invoke(this, new ModDownloadFailedEventArgs(requestUri));
+                    return new(DownloadResultKind.Failed, null);
                 }
-                return null;
-            }            
+            }
         }
 
         public async Task<List<Endorsement>> GetEndorsements()

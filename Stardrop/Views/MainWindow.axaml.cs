@@ -1658,14 +1658,18 @@ namespace Stardrop.Views
             var requestWindow = new MessageWindow(String.Format(Program.translation.Get("ui.message.confirm_nxm_install"), modDetails.Name));
             if (Program.settings.IsAskingBeforeAcceptingNXM is false || await requestWindow.ShowDialog<bool>(this))
             {
-                var downloadedFilePath = await Nexus.Client.DownloadFileAndGetPath(processedDownloadLink, modDetails.Name);
-                // TODO: Once this returns a better value, inspect it to see if it was
-                // a user-cancellation failure, or something else
-                if (downloadedFilePath is null)
+                var downloadResult = await Nexus.Client.DownloadFileAndGetPath(processedDownloadLink, modDetails.Name);
+                if (downloadResult.ResultKind is DownloadResultKind.Failed)
                 {
                     await CreateWarningWindow(String.Format(Program.translation.Get("ui.warning.failed_nexus_install"), modDetails.Name), Program.translation.Get("internal.ok"));
                     return false;
                 }
+                if (downloadResult.ResultKind is DownloadResultKind.UserCanceled)
+                {
+                    // No need for a warning, this is something the user chose intentionally
+                    return false;
+                }
+                string downloadedFilePath = downloadResult.DownloadedModFilePath!;
 
                 var addedMods = await AddMods(new string[] { downloadedFilePath });
                 await CheckForModUpdates(addedMods, useCache: true, skipCacheCheck: true);
@@ -2145,18 +2149,23 @@ namespace Stardrop.Views
                 return null;
             }
 
-            var downloadedFilePath = await Nexus.Client.DownloadFileAndGetPath(modDownloadLink, modFile.Name);
-            // TODO: Once this returns a better value, inspect it to see if it was
-            // a user-cancellation failure, or something else
-            if (downloadedFilePath is null)
+            var downloadResult = await Nexus.Client.DownloadFileAndGetPath(modDownloadLink, modFile.Name);
+            if (downloadResult.ResultKind is DownloadResultKind.UserCanceled)
+            {
+                mod.InstallState = InstallState.Unknown;
+                // No warning, as the user triggered this intentionally
+                return null;
+            }
+            if (downloadResult.ResultKind is DownloadResultKind.Failed)
             {
                 await CreateWarningWindow(String.Format(Program.translation.Get("ui.warning.failed_nexus_install"), mod.Name), Program.translation.Get("internal.ok"));
                 mod.InstallState = InstallState.Unknown;
                 return null;
             }
+
             mod.InstallState = InstallState.Installing;
 
-            return downloadedFilePath;
+            return downloadResult.DownloadedModFilePath;
         }
 
         public bool TryDeleteMod(Mod mod, int retries=3)
