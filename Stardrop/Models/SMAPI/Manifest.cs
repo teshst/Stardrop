@@ -13,7 +13,7 @@ namespace Stardrop.Models.SMAPI
         /// <summary>A brief description of the mod.</summary>
         public string Description { get; set; }
 
-        /// <summary>The namespaced mod IDs to query for updates (like <c>NexusClient:541</c>).</summary>
+        /// <summary>The namespaced mod IDs to query for updates (like <c>Nexus:541</c>).</summary>
         [JsonConverter(typeof(ModKeyConverter))]
         public string[] UpdateKeys { get; set; }
 

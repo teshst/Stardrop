@@ -3,6 +3,7 @@ using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Markup.Xaml;
 using Avalonia.Threading;
+using DynamicData;
 using Semver;
 using SharpCompress.Archives;
 using SharpCompress.Common;
@@ -1964,6 +1965,8 @@ namespace Stardrop.Views
         {
             // Create the client, and open access to Nexus if we haven't already done it
             await SetupNexusConnection(Nexus.GetCachedKey());
+
+            Program.helper.Log($"Attempting to check for Nexus Mods connection (Has valid client: {Nexus.Client is not null})");
 
             if (Nexus.Client is null)
             {
