@@ -2,19 +2,27 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d"
              xmlns:sys="using:System"
              xmlns:scg="using:System.Collections.Generic"
              xmlns:i="clr-namespace:Projektanker.Icons.Avalonia;assembly=Projektanker.Icons.Avalonia"
              xmlns:vm="using:Stardrop.ViewModels"
-             mc:Ignorable="d" d:DesignWidth="400" d:DesignHeight="200"
              Width="400"
              Height="200"
              x:Class="Stardrop.Views.DownloadPanel"
              x:DataType="vm:DownloadPanelViewModel">
 
+    <Design.DataContext>
+        <vm:DownloadPanelViewModel/>
+    </Design.DataContext>
+
     <UserControl.Styles>
-        <Style Selector="TextBlock">
+        <Style Selector="TextBlock.foreground">
             <Setter Property="Foreground" Value="{DynamicResource ThemeForegroundBrush}"/>
+        </Style>
+        <Style Selector="TextBlock.header">
+            <Setter Property="Foreground" Value="{DynamicResource ThemeForegroundBrush}"/>
+            <Setter Property="FontWeight" Value="Bold"/>
         </Style>
         <Style Selector="Button">
             <Setter Property="Foreground" Value="{DynamicResource ThemeForegroundBrush}"/>
@@ -30,66 +38,79 @@
     </UserControl.Styles>
     
     <ScrollViewer Padding="12 0 24 0">
-        <!--TODO: Some UI to show when Downloads is empty-->        
-        <ItemsRepeater x:Name="DownloadItems" 
-                       Items="{Binding Downloads}"
-                       Margin="0 12 0 12">
-            <ItemsRepeater.Layout>
-                <StackLayout Spacing="16"/>
-            </ItemsRepeater.Layout>
-            <ItemsRepeater.ItemTemplate>
-                <DataTemplate DataType="vm:ModDownloadViewModel">
-                    <Grid RowDefinitions="Auto, Auto, Auto">
+        <Grid>
+            <TextBlock x:Name="NoDownloadsHeader"
+                       Classes="header"
+                       Margin="0 12 0 12"
+                       HorizontalAlignment="Center"
+                       TextAlignment="Center"
+                       VerticalAlignment="Center"
+                       Text="{Binding NoDownloadsLabel}"
+                       IsVisible="{Binding !Downloads.Count}"/>
+            <ItemsRepeater x:Name="DownloadItems" 
+                           Items="{Binding Downloads}"
+                           Margin="0 12 0 12"
+                           IsVisible="{Binding !!Downloads.Count}">
+                <ItemsRepeater.Layout>
+                    <StackLayout Spacing="16"/>
+                </ItemsRepeater.Layout>
+                <ItemsRepeater.ItemTemplate>
+                    <DataTemplate DataType="vm:ModDownloadViewModel">
+                        <Grid RowDefinitions="Auto, Auto, Auto">
                         
-                        <TextBlock Grid.Row="0" Text="{Binding Name}"/>
+                            <TextBlock Grid.Row="0" Classes="foreground" Text="{Binding Name}"/>
 
-                        <Grid Grid.Row="1" ColumnDefinitions="8*, 2*, Auto">
-                            
-                            <!--TODO: Fix tooltip color so that it's always black instead of the foreground color-->
-                            <ProgressBar x:Name="ProgressBar" 
-                                         Grid.Column="0"
-                                         Minimum="0" Maximum="100"                                         
-                                         IsIndeterminate="{Binding IsSizeUnknown}"
-                                         Value="{Binding Completion}"/>
-                            <TextBlock x:Name="PercentageText" 
-                                       Grid.Row="1" Grid.Column="1"
-                                       HorizontalAlignment="Center"
-                                       VerticalAlignment="Center"
-                                       Margin="0 0 0 6"
+                            <Grid Grid.Row="1" ColumnDefinitions="8*, 2*, Auto">
+                                                        
+                                <ProgressBar x:Name="ProgressBar" 
+                                             Grid.Column="0"
+                                             Minimum="0" Maximum="100"                                         
+                                             IsIndeterminate="{Binding IsSizeUnknown}"
+                                             Value="{Binding Completion}"/>
+                                <TextBlock x:Name="PercentageText" 
+                                           Grid.Row="1" Grid.Column="1"
+                                           Classes="foreground"
+                                           HorizontalAlignment="Center"
+                                           VerticalAlignment="Center"
+                                           Margin="0 0 0 6"
+                                           TextAlignment="Right"
+                                           Text="{Binding Completion, StringFormat='{}{0:0.##}%'}"/>
+                                <Button x:Name="CancelButton" 
+                                        Grid.Row="1" Grid.Column="2" 
+                                        i:Attached.Icon="mdi-cancel"
+                                        Command="{Binding CancelCommand}"
+                                        IsVisible="{Binding !IsDownloadEnded}"
+                                        ToolTip.Tip="{Binding CancelButtonTooltip}"/>
+                                <Button x:Name="RemoveButton"
+                                        Grid.Row="1" Grid.Column="2"
+                                        i:Attached.Icon="mdi-close"
+                                        Command="{Binding RemoveCommand}"
+                                        IsVisible="{Binding IsDownloadEnded}"
+                                        ToolTip.Tip="{Binding RemoveButtonTooltip}"/>
+                            </Grid>
+
+                            <TextBlock x:Name="SpeedText" 
+                                       Grid.Row="2" 
+                                       Classes="foreground"
+                                       Text="{Binding DownloadSpeedLabel}"
+                                       IsVisible="{Binding !IsDownloadEnded}"/>
+                            <TextBlock x:Name="DownloadProgressText" 
+                                       Grid.Row="2" 
+                                       Classes="foreground"
+                                       HorizontalAlignment="Right" 
                                        TextAlignment="Right"
-                                       Text="{Binding Completion, StringFormat='{}{0:0.##}%'}"/>
-                            <Button x:Name="CancelButton" 
-                                    Grid.Row="1" Grid.Column="2" 
-                                    i:Attached.Icon="mdi-cancel"
-                                    Command="{Binding CancelCommand}"
-                                    IsVisible="{Binding !IsDownloadEnded}"
-                                    ToolTip.Tip="{Binding CancelButtonTooltip}"/>
-                            <Button x:Name="RemoveButton"
-                                    Grid.Row="1" Grid.Column="2"
-                                    i:Attached.Icon="mdi-close"
-                                    Command="{Binding RemoveCommand}"
-                                    IsVisible="{Binding IsDownloadEnded}"
-                                    ToolTip.Tip="{Binding RemoveButtonTooltip}"/>
-                        </Grid>
-
-                        <TextBlock x:Name="SpeedText" 
-                                   Grid.Row="2" 
-                                   Text="{Binding DownloadSpeedLabel}"
-                                   IsVisible="{Binding !IsDownloadEnded}"/>
-                        <TextBlock x:Name="DownloadProgressText" 
-                                   Grid.Row="2" 
-                                   HorizontalAlignment="Right" 
-                                   TextAlignment="Right"
-                                   Text="{Binding DownloadProgressLabel}"/>
-                        <TextBlock x:Name="DownloadCompletionStatusText"
-                                   Grid.Row="2"
-                                   Text="{Binding DownloadCompletionStatusText}"
-                                   IsVisible="{Binding IsDownloadEnded}"/>
+                                       Text="{Binding DownloadProgressLabel}"/>
+                            <TextBlock x:Name="DownloadCompletionStatusText"
+                                       Classes="foreground"
+                                       Grid.Row="2"
+                                       Text="{Binding DownloadCompletionStatusText}"
+                                       IsVisible="{Binding IsDownloadEnded}"/>
                         
-                    </Grid>
-                </DataTemplate>
-            </ItemsRepeater.ItemTemplate>
-        </ItemsRepeater>
+                        </Grid>
+                    </DataTemplate>
+                </ItemsRepeater.ItemTemplate>
+            </ItemsRepeater>
+        </Grid>
     </ScrollViewer>    
     
 </UserControl>

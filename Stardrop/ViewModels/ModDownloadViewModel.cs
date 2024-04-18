@@ -25,10 +25,10 @@ namespace Stardrop.ViewModels
         public event EventHandler? RemovalRequested = null!;
 
         // --Set-once properties--
-        public Uri ModUri { get; set; }
+        public Uri ModUri { get; init; }
 
-        public string CancelButtonTooltip { get; set; } = Program.translation.Get("ui.downloads_panel.tooltips.cancel_button");
-        public string RemoveButtonTooltip { get; set; } = Program.translation.Get("ui.downloads_panel.tooltips.remove_button");
+        public string CancelButtonTooltip { get; init; } = Program.translation.Get("ui.downloads_panel.tooltips.cancel_button");
+        public string RemoveButtonTooltip { get; init; } = Program.translation.Get("ui.downloads_panel.tooltips.remove_button");
 
         // --Bindable properties--
 

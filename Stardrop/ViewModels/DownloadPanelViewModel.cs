@@ -1,4 +1,5 @@
-﻿using ReactiveUI;
+﻿using Avalonia.Controls;
+using ReactiveUI;
 using Stardrop.Models.Data;
 using Stardrop.Utilities.External;
 using System;
@@ -8,7 +9,9 @@ using System.Linq;
 namespace Stardrop.ViewModels
 {
     public class DownloadPanelViewModel : ViewModelBase
-    {        
+    {
+        public string NoDownloadsLabel { get; init; } = Program.translation.Get("ui.downloads_panel.no_downloads_label");
+
         private ObservableCollection<ModDownloadViewModel> _downloads = new();
         public ObservableCollection<ModDownloadViewModel> Downloads { get => _downloads; set => this.RaiseAndSetIfChanged(ref _downloads, value); }
 
@@ -65,7 +68,7 @@ namespace Stardrop.ViewModels
                 // want to retry a failed download.
                 // But just in case, check to see if the existing download is still in-progress. If it is, do nothing.
                 // We don't want to stop a user's 95% download because they accidentally hit the "download again please" button!
-                if (existingDownload.DownloadStatus == ModDownloadStatus.NotStarted 
+                if (existingDownload.DownloadStatus == ModDownloadStatus.NotStarted
                     || existingDownload.DownloadStatus == ModDownloadStatus.InProgress)
                 {
                     return;
@@ -78,7 +81,7 @@ namespace Stardrop.ViewModels
             }
 
             var downloadVM = new ModDownloadViewModel(e.Uri, e.Name, e.Size, e.DownloadCancellationSource);
-            downloadVM.RemovalRequested += DownloadRemovalRequested;            
+            downloadVM.RemovalRequested += DownloadRemovalRequested;
             Downloads.Add(downloadVM);
         }
 
@@ -89,7 +92,7 @@ namespace Stardrop.ViewModels
             {
                 download.DownloadStatus = ModDownloadStatus.InProgress;
                 download.DownloadedBytes = e.TotalBytes;
-            }            
+            }
         }
 
         private void DownloadCompleted(object? sender, ModDownloadCompletedEventArgs e)
@@ -119,6 +122,53 @@ namespace Stardrop.ViewModels
 
             downloadVM.RemovalRequested -= DownloadRemovalRequested;
             Downloads.Remove(downloadVM);
+        }
+
+        public DownloadPanelViewModel()
+        {
+            if (!Design.IsDesignMode)
+            {
+                throw new Exception("This constructor should only be called in design mode.");
+            }
+
+            var inProgressDownload = new ModDownloadViewModel(
+                new Uri("https://www.fakeurl.com/testMod"),
+                "Fake Test Mod Download",
+                1024 * 1024,
+                new()
+            );
+            inProgressDownload.DownloadedBytes = inProgressDownload.SizeBytes!.Value / 2;
+            Downloads.Add(inProgressDownload);
+
+            var succeededDownload = new ModDownloadViewModel(
+                new Uri("https://www.fakeSuccess.com"),
+                "Fake Succeeded Download",
+                1234,
+                new()
+            );
+            succeededDownload.DownloadStatus = ModDownloadStatus.Successful;
+            succeededDownload.DownloadedBytes = 1234;
+            Downloads.Add(succeededDownload);
+
+            var failedDownload = new ModDownloadViewModel(
+                new Uri("https://www.differentFakeUrl.com"),
+                "Failed Fake Download",
+                1024 * 1024 * 1024,
+                new()
+            );
+            failedDownload.DownloadedBytes = failedDownload.SizeBytes!.Value / 3;
+            failedDownload.DownloadStatus = ModDownloadStatus.Failed;
+            Downloads.Add(failedDownload);
+
+            var cancelledDownload = new ModDownloadViewModel(
+                new Uri("https://www.cancelledFake.com"),
+                "Cancelled Fake Download",
+                1024 * 1024 * 5,
+                new()
+            );
+            cancelledDownload.DownloadedBytes = cancelledDownload.SizeBytes!.Value / 4;
+            cancelledDownload.DownloadStatus = ModDownloadStatus.Canceled;
+            Downloads.Add(cancelledDownload);
         }
     }
 }
