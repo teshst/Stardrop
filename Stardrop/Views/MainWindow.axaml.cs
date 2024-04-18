@@ -1619,7 +1619,7 @@ namespace Stardrop.Views
             // Evaluate mod requirements
             _viewModel.EvaluateRequirements();
 
-            // Check for NexusClient Mods connection perform related tasks
+            // Check for Nexus Mods connection perform related tasks
             await CheckForNexusConnection();
 
             // Hide the required mods
@@ -1995,7 +1995,7 @@ namespace Stardrop.Views
                 // Show endorsements
                 _viewModel.ShowEndorsements = true;
 
-                // Show NexusClient mod download column, if user is premium
+                // Show Nexus mod download column, if user is premium
                 _viewModel.ShowInstalls = Program.settings.NexusDetails.IsPremium;
             }
             else
