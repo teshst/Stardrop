@@ -14,8 +14,6 @@ namespace Stardrop.ViewModels
 {
     public class DownloadPanelViewModel : ViewModelBase
     {
-        public string NoDownloadsLabel { get; init; } = Program.translation.Get("ui.downloads_panel.no_downloads_label");
-
         private ObservableCollection<ModDownloadViewModel> _downloads = new();
         public ObservableCollection<ModDownloadViewModel> Downloads { get => _downloads; set => this.RaiseAndSetIfChanged(ref _downloads, value); }        
 

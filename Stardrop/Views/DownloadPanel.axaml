@@ -8,6 +8,7 @@
              xmlns:i="clr-namespace:Projektanker.Icons.Avalonia;assembly=Projektanker.Icons.Avalonia"
              xmlns:vm="using:Stardrop.ViewModels"
              xmlns:conv="using:Stardrop.Converters"
+             xmlns:i18n="using:Stardrop.Utilities.Extension"
              Width="400"
              Height="300"
              x:Class="Stardrop.Views.DownloadPanel"
@@ -50,7 +51,7 @@
                        HorizontalAlignment="Center"
                        TextAlignment="Center"
                        VerticalAlignment="Center"
-                       Text="{Binding NoDownloadsLabel}"
+                       Text="{i18n:Translate ui.downloads_panel.no_downloads_label}"
                        IsVisible="{Binding !Downloads.Count}"/>
             <ItemsRepeater x:Name="DownloadItems" 
                            Items="{Binding Downloads}"
@@ -107,7 +108,7 @@
                                                 Grid.Row="1" Grid.Column="2"
                                                 i:Attached.Icon="mdi-cancel"
                                                 Command="{Binding CancelCommand}"
-                                                ToolTip.Tip="{Binding CancelButtonTooltip}"/>
+                                                ToolTip.Tip="{i18n:Translate ui.downloads_panel.tooltips.cancel_button}"/>
                                     </Grid>
 
                                     <TextBlock x:Name="SpeedText"
@@ -152,7 +153,7 @@
                                                 Grid.Row="1" Grid.Column="2"
                                                 i:Attached.Icon="mdi-close"
                                                 Command="{Binding RemoveCommand}"
-                                                ToolTip.Tip="{Binding RemoveButtonTooltip}"/>
+                                                ToolTip.Tip="{i18n:Translate ui.downloads_panel.tooltips.remove_button}"/>
                                     </Grid>
 
                                     <TextBlock x:Name="DownloadProgressText"
@@ -166,7 +167,7 @@
                                                Grid.Row="2"
                                                Classes="foreground"
                                                Margin="0 6 0 0"
-                                               Text="{Binding SuccessStatusText}"/>
+                                               Text="{i18n:Translate ui_downloads_panel.download_success}"/>
 
                                 </Grid>
                             </Template>
@@ -198,7 +199,7 @@
                                                 Grid.Row="1" Grid.Column="2"
                                                 i:Attached.Icon="mdi-close"
                                                 Command="{Binding RemoveCommand}"
-                                                ToolTip.Tip="{Binding RemoveButtonTooltip}"/>
+                                                ToolTip.Tip="{i18n:Translate ui.downloads_panel.tooltips.remove_button}"/>
                                     </Grid>
 
                                     <TextBlock x:Name="DownloadProgressText"
@@ -212,7 +213,7 @@
                                                Grid.Row="2"
                                                Classes="foreground"
                                                Margin="0 6 0 0"
-                                               Text="{Binding CanceledStatusText}"/>
+                                               Text="{i18n:Translate ui.downloads_panel.download_canceled}"/>
 
                                 </Grid>
                             </Template>
@@ -244,7 +245,7 @@
                                                 Grid.Row="1" Grid.Column="2"
                                                 i:Attached.Icon="mdi-close"
                                                 Command="{Binding RemoveCommand}"
-                                                ToolTip.Tip="{Binding RemoveButtonTooltip}"/>
+                                                ToolTip.Tip="{i18n:Translate ui.downloads_panel.tooltips.remove_button}"/>
                                     </Grid>
 
                                     <TextBlock x:Name="DownloadProgressText"
@@ -258,7 +259,7 @@
                                                Grid.Row="2"
                                                Classes="foreground"
                                                Margin="0 6 0 0"
-                                               Text="{Binding FailedStatusText}"/>
+                                               Text="{i18n:Translate ui.downloads_panel.download_failed}"/>
 
                                 </Grid>
                             </Template>

@@ -27,13 +27,7 @@ namespace Stardrop.ViewModels
         // --Set-once properties--
         public Uri ModUri { get; init; }
 
-        public string SuccessStatusText { get; init; } = Program.translation.Get("ui_downloads_panel.download_success");
-        public string FailedStatusText { get; init; } = Program.translation.Get("ui.downloads_panel.download_failed");
-        public string CanceledStatusText { get; init; } = Program.translation.Get("ui.downloads_panel.download_canceled");
-        public string CancelButtonTooltip { get; init; } = Program.translation.Get("ui.downloads_panel.tooltips.cancel_button");
-        public string RemoveButtonTooltip { get; init; } = Program.translation.Get("ui.downloads_panel.tooltips.remove_button");
-
-        // --Bindable properties--
+        // --Bindable properties--        
 
         private string _name;
         public string Name { get => _name; set => this.RaiseAndSetIfChanged(ref _name, value); }
