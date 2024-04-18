@@ -59,6 +59,9 @@ namespace Stardrop.ViewModels
         private readonly ObservableAsPropertyHelper<bool> _isDownloadEnded = null!;
         public bool IsDownloadEnded => _isDownloadEnded.Value;
 
+        private readonly ObservableAsPropertyHelper<bool> _isDownloadUnsuccessful = null!;
+        public bool IsDownloadUnsuccessful => _isDownloadEnded.Value;
+
         private readonly ObservableAsPropertyHelper<string> _downloadSpeedLabel = null!;
         public string DownloadSpeedLabel => _downloadSpeedLabel.Value;
 
@@ -108,6 +111,12 @@ namespace Stardrop.ViewModels
                         _ => ""
                     };
                 }).ToProperty(this, x => x.DownloadCompletionStatusText, out _downloadCompletionStatusText);
+
+            // DownloadStatus to IsDownloadUnsuccessful conversion
+            this.WhenAnyValue(x => x.DownloadStatus)
+                .Select(x => x == ModDownloadStatus.Canceled
+                    || x == ModDownloadStatus.Failed)
+                .ToProperty(this, x => x.IsDownloadUnsuccessful, out _isDownloadUnsuccessful);
 
             if (SizeBytes.HasValue)
             {

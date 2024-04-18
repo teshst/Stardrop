@@ -52,7 +52,7 @@
                            Margin="0 12 0 12"
                            IsVisible="{Binding !!Downloads.Count}">
                 <ItemsRepeater.Layout>
-                    <StackLayout Spacing="16"/>
+                    <StackLayout Spacing="24"/>
                 </ItemsRepeater.Layout>
                 <ItemsRepeater.ItemTemplate>
                     <DataTemplate DataType="vm:ModDownloadViewModel">
@@ -64,15 +64,24 @@
                                                         
                                 <ProgressBar x:Name="ProgressBar" 
                                              Grid.Column="0"
-                                             Minimum="0" Maximum="100"                                         
+                                             Minimum="0" Maximum="100"
                                              IsIndeterminate="{Binding IsSizeUnknown}"
-                                             Value="{Binding Completion}"/>
+                                             Value="{Binding Completion}"
+                                             IsVisible="{Binding !IsDownloadUnsuccessful}"/>
+                                <!--This only exists because it appears that binding to a ProgressBar's Foreground
+                                property doesn't reliably work. Otherwise, we would just update the ProgressBar's
+                                Foreground to be Red on failure. ¯\_(ツ)_/¯-->
+                                <ProgressBar x:Name="UnsuccessfulProgressBar"
+                                             Grid.Column="0"
+                                             Minimum="0" Maximum="100"
+                                             Foreground="Red"
+                                             Value="{Binding Completion}"
+                                             IsVisible="{Binding IsDownloadUnsuccessful}"/>
                                 <TextBlock x:Name="PercentageText" 
                                            Grid.Row="1" Grid.Column="1"
                                            Classes="foreground"
                                            HorizontalAlignment="Center"
                                            VerticalAlignment="Center"
-                                           Margin="0 0 0 6"
                                            TextAlignment="Right"
                                            Text="{Binding Completion, StringFormat='{}{0:0.##}%'}"/>
                                 <Button x:Name="CancelButton" 
@@ -92,17 +101,20 @@
                             <TextBlock x:Name="SpeedText" 
                                        Grid.Row="2" 
                                        Classes="foreground"
+                                       Margin="0 6 0 0"
                                        Text="{Binding DownloadSpeedLabel}"
                                        IsVisible="{Binding !IsDownloadEnded}"/>
                             <TextBlock x:Name="DownloadProgressText" 
                                        Grid.Row="2" 
                                        Classes="foreground"
+                                       Margin="0 6 0 0"
                                        HorizontalAlignment="Right" 
                                        TextAlignment="Right"
                                        Text="{Binding DownloadProgressLabel}"/>
                             <TextBlock x:Name="DownloadCompletionStatusText"
-                                       Classes="foreground"
                                        Grid.Row="2"
+                                       Classes="foreground"
+                                       Margin="0 6 0 0"
                                        Text="{Binding DownloadCompletionStatusText}"
                                        IsVisible="{Binding IsDownloadEnded}"/>
                         
