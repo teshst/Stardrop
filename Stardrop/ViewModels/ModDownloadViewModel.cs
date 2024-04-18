@@ -27,6 +27,9 @@ namespace Stardrop.ViewModels
         // --Set-once properties--
         public Uri ModUri { get; init; }
 
+        public string SuccessStatusText { get; init; } = Program.translation.Get("ui_downloads_panel.download_success");
+        public string FailedStatusText { get; init; } = Program.translation.Get("ui.downloads_panel.download_failed");
+        public string CanceledStatusText { get; init; } = Program.translation.Get("ui.downloads_panel.download_canceled");
         public string CancelButtonTooltip { get; init; } = Program.translation.Get("ui.downloads_panel.tooltips.cancel_button");
         public string RemoveButtonTooltip { get; init; } = Program.translation.Get("ui.downloads_panel.tooltips.remove_button");
 
@@ -46,21 +49,11 @@ namespace Stardrop.ViewModels
 
         // --Composite or dependent properties--
 
-        private ObservableAsPropertyHelper<string> _downloadCompletionStatusText = null!;
-        public string DownloadCompletionStatusText => _downloadCompletionStatusText.Value;
-
         private readonly ObservableAsPropertyHelper<double> _completion = null!;
         public double Completion => _completion.Value;
 
         private readonly ObservableAsPropertyHelper<bool> _isSizeUnknown = null!;
         public bool IsSizeUnknown => _isSizeUnknown.Value;
-
-        // Ended via success, failure, or cancellation
-        private readonly ObservableAsPropertyHelper<bool> _isDownloadEnded = null!;
-        public bool IsDownloadEnded => _isDownloadEnded.Value;
-
-        private readonly ObservableAsPropertyHelper<bool> _isDownloadUnsuccessful = null!;
-        public bool IsDownloadUnsuccessful => _isDownloadEnded.Value;
 
         private readonly ObservableAsPropertyHelper<string> _downloadSpeedLabel = null!;
         public string DownloadSpeedLabel => _downloadSpeedLabel.Value;
@@ -90,33 +83,6 @@ namespace Stardrop.ViewModels
             this.WhenAnyValue(x => x.SizeBytes)
                 .Select(x => x.HasValue is false)
                 .ToProperty(this, x => x.IsSizeUnknown, out _isSizeUnknown);
-
-            // DownloadStaus to IsDownloadEnded conversion
-            this.WhenAnyValue(x => x.DownloadStatus)
-                .Select(x => x == ModDownloadStatus.Successful
-                    || x == ModDownloadStatus.Canceled
-                    || x == ModDownloadStatus.Failed)
-                .ToProperty(this, x => x.IsDownloadEnded, out _isDownloadEnded);
-
-            // DownloadStatus to DownloadCompletionStatusText conversion
-            this.WhenAnyValue(x => x.DownloadStatus)
-                .Select(x =>
-                {
-                    return x switch
-                    {
-                        ModDownloadStatus.Canceled => Program.translation.Get("ui.downloads_panel.download_canceled"),
-                        ModDownloadStatus.Failed => Program.translation.Get("ui.downloads_panel.download_failed"),
-                        ModDownloadStatus.Successful => Program.translation.Get("ui_downloads_panel.download_success"),
-                        // The label isn't visible in these states, so the value we return doesn't matter
-                        _ => ""
-                    };
-                }).ToProperty(this, x => x.DownloadCompletionStatusText, out _downloadCompletionStatusText);
-
-            // DownloadStatus to IsDownloadUnsuccessful conversion
-            this.WhenAnyValue(x => x.DownloadStatus)
-                .Select(x => x == ModDownloadStatus.Canceled
-                    || x == ModDownloadStatus.Failed)
-                .ToProperty(this, x => x.IsDownloadUnsuccessful, out _isDownloadUnsuccessful);
 
             if (SizeBytes.HasValue)
             {

@@ -137,6 +137,7 @@ namespace Stardrop.ViewModels
                 1024 * 1024,
                 new()
             );
+            inProgressDownload.DownloadStatus = ModDownloadStatus.InProgress;
             inProgressDownload.DownloadedBytes = inProgressDownload.SizeBytes!.Value / 2;
             Downloads.Add(inProgressDownload);
 
@@ -169,6 +170,16 @@ namespace Stardrop.ViewModels
             cancelledDownload.DownloadedBytes = cancelledDownload.SizeBytes!.Value / 4;
             cancelledDownload.DownloadStatus = ModDownloadStatus.Canceled;
             Downloads.Add(cancelledDownload);
+
+            var indeterminateInProgressDownload = new ModDownloadViewModel(
+                new Uri("https://www.inProgressMystery.com"),
+                "In Progress Download of Unknown Size",
+                null,
+                new()
+            );
+            indeterminateInProgressDownload.DownloadedBytes = 1024 * 1024 * 2;
+            indeterminateInProgressDownload.DownloadStatus = ModDownloadStatus.InProgress;
+            Downloads.Add(indeterminateInProgressDownload);
         }
     }
 }

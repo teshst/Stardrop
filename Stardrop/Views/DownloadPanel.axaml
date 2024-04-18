@@ -7,14 +7,19 @@
              xmlns:scg="using:System.Collections.Generic"
              xmlns:i="clr-namespace:Projektanker.Icons.Avalonia;assembly=Projektanker.Icons.Avalonia"
              xmlns:vm="using:Stardrop.ViewModels"
+             xmlns:conv="using:Stardrop.Converters"
              Width="400"
-             Height="200"
+             Height="300"
              x:Class="Stardrop.Views.DownloadPanel"
              x:DataType="vm:DownloadPanelViewModel">
 
     <Design.DataContext>
         <vm:DownloadPanelViewModel/>
     </Design.DataContext>
+
+    <UserControl.Resources>
+        <conv:EnumToBoolConveter x:Key="EnumToBoolConverter"/>
+    </UserControl.Resources>
 
     <UserControl.Styles>
         <Style Selector="TextBlock.foreground">
@@ -53,74 +58,213 @@
                            IsVisible="{Binding !!Downloads.Count}">
                 <ItemsRepeater.Layout>
                     <StackLayout Spacing="24"/>
-                </ItemsRepeater.Layout>
+                </ItemsRepeater.Layout>                
                 <ItemsRepeater.ItemTemplate>
                     <DataTemplate DataType="vm:ModDownloadViewModel">
-                        <Grid RowDefinitions="Auto, Auto, Auto">
-                        
-                            <TextBlock Grid.Row="0" Classes="foreground" Text="{Binding Name}"/>
-
-                            <Grid Grid.Row="1" ColumnDefinitions="8*, 2*, Auto">
-                                                        
-                                <ProgressBar x:Name="ProgressBar" 
-                                             Grid.Column="0"
-                                             Minimum="0" Maximum="100"
-                                             IsIndeterminate="{Binding IsSizeUnknown}"
-                                             Value="{Binding Completion}"
-                                             IsVisible="{Binding !IsDownloadUnsuccessful}"/>
-                                <!--This only exists because it appears that binding to a ProgressBar's Foreground
-                                property doesn't reliably work. Otherwise, we would just update the ProgressBar's
-                                Foreground to be Red on failure. ¯\_(ツ)_/¯-->
-                                <ProgressBar x:Name="UnsuccessfulProgressBar"
-                                             Grid.Column="0"
-                                             Minimum="0" Maximum="100"
-                                             Foreground="Red"
-                                             Value="{Binding Completion}"
-                                             IsVisible="{Binding IsDownloadUnsuccessful}"/>
-                                <TextBlock x:Name="PercentageText" 
-                                           Grid.Row="1" Grid.Column="1"
-                                           Classes="foreground"
-                                           HorizontalAlignment="Center"
-                                           VerticalAlignment="Center"
-                                           TextAlignment="Right"
-                                           Text="{Binding Completion, StringFormat='{}{0:0.##}%'}"/>
-                                <Button x:Name="CancelButton" 
-                                        Grid.Row="1" Grid.Column="2" 
-                                        i:Attached.Icon="mdi-cancel"
-                                        Command="{Binding CancelCommand}"
-                                        IsVisible="{Binding !IsDownloadEnded}"
-                                        ToolTip.Tip="{Binding CancelButtonTooltip}"/>
-                                <Button x:Name="RemoveButton"
-                                        Grid.Row="1" Grid.Column="2"
-                                        i:Attached.Icon="mdi-close"
-                                        Command="{Binding RemoveCommand}"
-                                        IsVisible="{Binding IsDownloadEnded}"
-                                        ToolTip.Tip="{Binding RemoveButtonTooltip}"/>
-                            </Grid>
-
-                            <TextBlock x:Name="SpeedText" 
-                                       Grid.Row="2" 
-                                       Classes="foreground"
-                                       Margin="0 6 0 0"
-                                       Text="{Binding DownloadSpeedLabel}"
-                                       IsVisible="{Binding !IsDownloadEnded}"/>
-                            <TextBlock x:Name="DownloadProgressText" 
-                                       Grid.Row="2" 
-                                       Classes="foreground"
-                                       Margin="0 6 0 0"
-                                       HorizontalAlignment="Right" 
-                                       TextAlignment="Right"
-                                       Text="{Binding DownloadProgressLabel}"/>
-                            <TextBlock x:Name="DownloadCompletionStatusText"
-                                       Grid.Row="2"
-                                       Classes="foreground"
-                                       Margin="0 6 0 0"
-                                       Text="{Binding DownloadCompletionStatusText}"
-                                       IsVisible="{Binding IsDownloadEnded}"/>
-                        
-                        </Grid>
+                        <!--Each of the Classes.className variables is a boolean. The converter checks the current DownloadStatus and sets
+                        the appropriate Classes.className to 'True', which then causes the style to kick in and fill in the UI with one of the 
+                        styles defined below. This simulates a Visual State Manager like WPF or UWP uses.-->
+                        <ContentControl Classes.notStarted="{Binding DownloadStatus, Converter={StaticResource EnumToBoolConverter}, 
+                                            ConverterParameter={x:Static vm:ModDownloadStatus.NotStarted}}"
+                                        Classes.inProgress="{Binding DownloadStatus, Converter={StaticResource EnumToBoolConverter}, 
+                                            ConverterParameter={x:Static vm:ModDownloadStatus.InProgress}}"
+                                        Classes.successful="{Binding DownloadStatus, Converter={StaticResource EnumToBoolConverter}, 
+                                            ConverterParameter={x:Static vm:ModDownloadStatus.Successful}}"
+                                        Classes.canceled="{Binding DownloadStatus, Converter={StaticResource EnumToBoolConverter}, 
+                                            ConverterParameter={x:Static vm:ModDownloadStatus.Canceled}}"
+                                        Classes.failed="{Binding DownloadStatus, Converter={StaticResource EnumToBoolConverter}, 
+                                            ConverterParameter={x:Static vm:ModDownloadStatus.Failed}}"/>
                     </DataTemplate>
                 </ItemsRepeater.ItemTemplate>
+                <ItemsRepeater.Styles>
+                    <!--UI for not-yet-started download-->
+                    <Style Selector="ContentControl.notStarted">
+                        <Setter Property="Content" Value="{x:Null}"/>
+                    </Style>
+                    <!--UI for in-progress download-->
+                    <Style Selector="ContentControl.inProgress" x:DataType="vm:ModDownloadViewModel">
+                        <Setter Property="Content">
+                            <Template>
+                                <Grid RowDefinitions="Auto, Auto, Auto">
+
+                                    <TextBlock Grid.Row="0" Classes="foreground" Text="{Binding Name}"/>
+
+                                    <Grid Grid.Row="1" ColumnDefinitions="8*, 2*, Auto">
+
+                                        <ProgressBar x:Name="ProgressBar"
+                                                     Grid.Column="0"
+                                                     Minimum="0" Maximum="100"
+                                                     IsIndeterminate="{Binding IsSizeUnknown}"
+                                                     Value="{Binding Completion}"/>
+                                        <TextBlock x:Name="PercentageText"
+                                                   Grid.Row="1" Grid.Column="1"
+                                                   Classes="foreground"
+                                                   HorizontalAlignment="Center"
+                                                   VerticalAlignment="Center"
+                                                   TextAlignment="Right"
+                                                   Text="{Binding Completion, StringFormat='{}{0:0.##}%'}"/>
+                                        <Button x:Name="CancelButton"
+                                                Grid.Row="1" Grid.Column="2"
+                                                i:Attached.Icon="mdi-cancel"
+                                                Command="{Binding CancelCommand}"
+                                                ToolTip.Tip="{Binding CancelButtonTooltip}"/>
+                                    </Grid>
+
+                                    <TextBlock x:Name="SpeedText"
+                                               Grid.Row="2"
+                                               Classes="foreground"
+                                               Margin="0 6 0 0"
+                                               Text="{Binding DownloadSpeedLabel}"/>
+                                    <TextBlock x:Name="DownloadProgressText"
+                                               Grid.Row="2"
+                                               Classes="foreground"
+                                               Margin="0 6 0 0"
+                                               HorizontalAlignment="Right"
+                                               TextAlignment="Right"
+                                               Text="{Binding DownloadProgressLabel}"/>
+                                </Grid>
+                            </Template>
+                        </Setter>
+                    </Style>
+                    <!--UI for successful download-->
+                    <Style Selector="ContentControl.successful" x:DataType="vm:DownloadPanelViewModel">
+                        <Setter Property="Content">
+                            <Template>
+                                <Grid RowDefinitions="Auto, Auto, Auto">
+
+                                    <TextBlock Grid.Row="0" Classes="foreground" Text="{Binding Name}"/>
+
+                                    <Grid Grid.Row="1" ColumnDefinitions="8*, 2*, Auto">
+
+                                        <ProgressBar x:Name="ProgressBar"
+                                                     Grid.Column="0"
+                                                     Minimum="0" Maximum="100"
+                                                     IsIndeterminate="{Binding IsSizeUnknown}"
+                                                     Value="{Binding Completion}"/>
+                                        <TextBlock x:Name="PercentageText"
+                                                   Grid.Row="1" Grid.Column="1"
+                                                   Classes="foreground"
+                                                   HorizontalAlignment="Center"
+                                                   VerticalAlignment="Center"
+                                                   TextAlignment="Right"
+                                                   Text="{Binding Completion, StringFormat='{}{0:0.##}%'}"/>
+                                        <Button x:Name="RemoveButton"
+                                                Grid.Row="1" Grid.Column="2"
+                                                i:Attached.Icon="mdi-close"
+                                                Command="{Binding RemoveCommand}"
+                                                ToolTip.Tip="{Binding RemoveButtonTooltip}"/>
+                                    </Grid>
+
+                                    <TextBlock x:Name="DownloadProgressText"
+                                               Grid.Row="2"
+                                               Classes="foreground"
+                                               Margin="0 6 0 0"
+                                               HorizontalAlignment="Right"
+                                               TextAlignment="Right"
+                                               Text="{Binding DownloadProgressLabel}"/>
+                                    <TextBlock x:Name="StatusText"
+                                               Grid.Row="2"
+                                               Classes="foreground"
+                                               Margin="0 6 0 0"
+                                               Text="{Binding SuccessStatusText}"/>
+
+                                </Grid>
+                            </Template>
+                        </Setter>
+                    </Style>
+                    <!--UI for a canceled download-->
+                    <Style Selector="ContentControl.canceled" x:DataType="vm:DownloadPanelViewModel">
+                        <Setter Property="Content">
+                            <Template>
+                                <Grid RowDefinitions="Auto, Auto, Auto">
+
+                                    <TextBlock Grid.Row="0" Classes="foreground" Text="{Binding Name}"/>
+
+                                    <Grid Grid.Row="1" ColumnDefinitions="8*, 2*, Auto">
+
+                                        <Border x:Name="UnsuccessfulProgressBar"
+                                                Grid.Column="0"
+                                                CornerRadius="4"
+                                                Height="4"
+                                                Background="Red"/>
+                                        <TextBlock x:Name="PercentageText"
+                                                   Grid.Row="1" Grid.Column="1"
+                                                   Classes="foreground"
+                                                   HorizontalAlignment="Center"
+                                                   VerticalAlignment="Center"
+                                                   TextAlignment="Right"
+                                                   Text="--"/>
+                                        <Button x:Name="RemoveButton"
+                                                Grid.Row="1" Grid.Column="2"
+                                                i:Attached.Icon="mdi-close"
+                                                Command="{Binding RemoveCommand}"
+                                                ToolTip.Tip="{Binding RemoveButtonTooltip}"/>
+                                    </Grid>
+
+                                    <TextBlock x:Name="DownloadProgressText"
+                                               Grid.Row="2"
+                                               Classes="foreground"
+                                               Margin="0 6 0 0"
+                                               HorizontalAlignment="Right"
+                                               TextAlignment="Right"
+                                               Text="{Binding DownloadProgressLabel}"/>
+                                    <TextBlock x:Name="StatusText"
+                                               Grid.Row="2"
+                                               Classes="foreground"
+                                               Margin="0 6 0 0"
+                                               Text="{Binding CanceledStatusText}"/>
+
+                                </Grid>
+                            </Template>
+                        </Setter>
+                    </Style>
+                    <!--UI for a failed download-->
+                    <Style Selector="ContentControl.failed" x:DataType="vm:DownloadPanelViewModel">
+                        <Setter Property="Content">
+                            <Template>
+                                <Grid RowDefinitions="Auto, Auto, Auto">
+
+                                    <TextBlock Grid.Row="0" Classes="foreground" Text="{Binding Name}"/>
+
+                                    <Grid Grid.Row="1" ColumnDefinitions="8*, 2*, Auto">
+
+                                        <Border x:Name="UnsuccessfulProgressBar"
+                                                Grid.Column="0"
+                                                CornerRadius="4"
+                                                Height="4"
+                                                Background="Red"/>
+                                        <TextBlock x:Name="PercentageText"
+                                                   Grid.Row="1" Grid.Column="1"
+                                                   Classes="foreground"
+                                                   HorizontalAlignment="Center"
+                                                   VerticalAlignment="Center"
+                                                   TextAlignment="Right"
+                                                   Text="--"/>
+                                        <Button x:Name="RemoveButton"
+                                                Grid.Row="1" Grid.Column="2"
+                                                i:Attached.Icon="mdi-close"
+                                                Command="{Binding RemoveCommand}"
+                                                ToolTip.Tip="{Binding RemoveButtonTooltip}"/>
+                                    </Grid>
+
+                                    <TextBlock x:Name="DownloadProgressText"
+                                               Grid.Row="2"
+                                               Classes="foreground"
+                                               Margin="0 6 0 0"
+                                               HorizontalAlignment="Right"
+                                               TextAlignment="Right"
+                                               Text="{Binding DownloadProgressLabel}"/>
+                                    <TextBlock x:Name="StatusText"
+                                               Grid.Row="2"
+                                               Classes="foreground"
+                                               Margin="0 6 0 0"
+                                               Text="{Binding FailedStatusText}"/>
+
+                                </Grid>
+                            </Template>
+                        </Setter>
+                    </Style>
+                </ItemsRepeater.Styles>
             </ItemsRepeater>
         </Grid>
     </ScrollViewer>    
