@@ -84,60 +84,67 @@ namespace Stardrop.ViewModels
                 .Select(x => x.HasValue is false)
                 .ToProperty(this, x => x.IsSizeUnknown, out _isSizeUnknown);
 
+            // DownloadedBytes to DownloadSpeedLabel conversion
+            this.WhenAnyValue(x => x.DownloadedBytes)
+                .Sample(TimeSpan.FromMilliseconds(500), RxApp.MainThreadScheduler)
+                .Select(bytes =>
+                {
+                    double elapsedSeconds = (DateTimeOffset.UtcNow - _startTime).TotalSeconds;
+                    double bytesPerSecond = bytes / elapsedSeconds;
+                    if (bytesPerSecond > 1024 * 1024)  // MB 
+                    {
+                        return $"{(bytesPerSecond / (1024 * 1024)):N2} MB/s";
+                    }
+                    else if (bytesPerSecond > 1024) // KB
+                    {
+                        return $"{(bytesPerSecond / 1024):N2} KB/s";
+                    }
+                    else // Bytes
+                    {
+                        return $"{bytesPerSecond:N0} B/s";
+                    }
+                }).ToProperty(this, x => x.DownloadSpeedLabel, out _downloadSpeedLabel);
+
+            // DownloadedBytes and SizeBytes to DownloadProgressLabel conversion
+            this.WhenAnyValue(x => x.DownloadedBytes, x => x.SizeBytes)
+                .Sample(TimeSpan.FromMilliseconds(500), RxApp.MainThreadScheduler)
+                .Select(((long Bytes, long? Total) x) =>
+                {
+                    string bytesString = ToHumanReadable(x.Bytes);
+                    if (x.Total is null)
+                    {
+                        return $"{bytesString} / ??? MB";
+                    }
+                    else
+                    {
+                        string totalString = ToHumanReadable(x.Total!.Value);
+                        return $"{bytesString} / {totalString}";
+                    }
+
+                    static string ToHumanReadable(long bytes)
+                    {
+                        if (bytes > 1024 * 1024) // MB
+                        {
+                            return $"{(bytes / (1024.0 * 1024.0)):N2} MB";
+                        }
+                        else if (bytes > 1024) // KB
+                        {
+                            return $"{(bytes / 1024.0):N2} KB";
+                        }
+                        else
+                        {
+                            return $"{bytes:N0} B";
+                        }
+                    }
+                }).ToProperty(this, x => x.DownloadProgressLabel, out _downloadProgressLabel);
+
             if (SizeBytes.HasValue)
             {
                 // DownloadedBytes to Completion conversion
                 this.WhenAnyValue(x => x.DownloadedBytes)
                     .Sample(TimeSpan.FromMilliseconds(500), RxApp.MainThreadScheduler)
                     .Select(x => (DownloadedBytes / (double)SizeBytes) * 100)
-                    .ToProperty(this, x => x.Completion, out _completion);
-
-                // DownloadedBytes to DownloadSpeedLabel conversion
-                this.WhenAnyValue(x => x.DownloadedBytes)
-                    .Sample(TimeSpan.FromMilliseconds(500), RxApp.MainThreadScheduler)
-                    .Select(bytes =>
-                    {
-                        double elapsedSeconds = (DateTimeOffset.UtcNow - _startTime).TotalSeconds;
-                        double bytesPerSecond = bytes / elapsedSeconds;
-                        if (bytesPerSecond > 1024 * 1024)  // MB 
-                        {
-                            return $"{(bytesPerSecond / (1024 * 1024)):N2} MB/s";
-                        }
-                        else if (bytesPerSecond > 1024) // KB
-                        {
-                            return $"{(bytesPerSecond / 1024):N2} KB/s";
-                        }
-                        else // Bytes
-                        {
-                            return $"{bytesPerSecond:N0} B/s";
-                        }
-                    }).ToProperty(this, x => x.DownloadSpeedLabel, out _downloadSpeedLabel);
-
-                // DownloadedBytes and SizeBytes to DownloadProgressLabel conversion
-                this.WhenAnyValue(x => x.DownloadedBytes, x => x.SizeBytes)
-                    .Sample(TimeSpan.FromMilliseconds(500), RxApp.MainThreadScheduler)
-                    .Select(((long Bytes, long? Total) x) =>
-                    {
-                        string bytesString = ToHumanReadable(x.Bytes);
-                        string totalString = ToHumanReadable(x.Total!.Value);
-                        return $"{bytesString} / {totalString}";
-
-                        static string ToHumanReadable(long bytes)
-                        {
-                            if (bytes > 1024 * 1024) // MB
-                            {
-                                return $"{(bytes / (1024.0 * 1024.0)):N2} MB";
-                            }
-                            else if (bytes > 1024) // KB
-                            {
-                                return $"{(bytes / 1024.0):N2} KB";
-                            }
-                            else
-                            {
-                                return $"{bytes:N0} B";
-                            }
-                        }
-                    }).ToProperty(this, x => x.DownloadProgressLabel, out _downloadProgressLabel);
+                    .ToProperty(this, x => x.Completion, out _completion);                
             }
         }
 
