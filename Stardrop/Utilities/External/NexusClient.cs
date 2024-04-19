@@ -400,24 +400,16 @@ namespace Stardrop.Utilities.External
 
                 long? contentLength = response.Content.Headers.ContentLength;
                 DownloadStarted?.Invoke(this, new ModDownloadStartedEventArgs(requestUri, fileName, contentLength, downloadCancellationSource));
-                if (contentLength.HasValue is false || contentLength.Value == 0)
+                    
+                var buffer = new byte[81920];
+                long totalBytesRead = 0;
+                int bytesRead;
+                while ((bytesRead = await downloadStream.ReadAsync(buffer, 0, buffer.Length, downloadCancellationSource.Token)) != 0)
                 {
-                    // We don't know the size, so we can't report progress, so just do a basic downloadStream copy                    
-                    await downloadStream.CopyToAsync(fileStream);
-                }
-                else
-                {
-                    // We *do* know the size, so do manual buffered reads and report progress as we go
-                    var buffer = new byte[81920].AsMemory();
-                    long totalBytesRead = 0;
-                    int bytesRead;
-                    while ((bytesRead = await downloadStream.ReadAsync(buffer, downloadCancellationSource.Token)) != 0)
-                    {
-                        await fileStream.WriteAsync(buffer, downloadCancellationSource.Token);
-                        totalBytesRead += bytesRead;
-                        DownloadProgressChanged?.Invoke(this, new ModDownloadProgressEventArgs(requestUri, totalBytesRead));
-                    }
-                }
+                    await fileStream.WriteAsync(buffer, 0, bytesRead, downloadCancellationSource.Token);
+                    totalBytesRead += bytesRead;
+                    DownloadProgressChanged?.Invoke(this, new ModDownloadProgressEventArgs(requestUri, totalBytesRead));
+                }                
 
                 DownloadCompleted?.Invoke(this, new ModDownloadCompletedEventArgs(requestUri));
                 return new(DownloadResultKind.Success, Path.Combine(Pathing.GetNexusPath(), fileName));
