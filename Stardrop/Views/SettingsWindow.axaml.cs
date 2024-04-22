@@ -128,10 +128,10 @@ namespace Stardrop.Views
 #endif
         }
 
-        public SettingsWindow(Window parentWindow) : this()
+        public SettingsWindow(double parentWindowHeight) : this()
         {
             // Adjust the height of the this window to be slightly smaller than the parent
-            this.Height = parentWindow.Height - (parentWindow.Height / 4);
+            this.Height = parentWindowHeight - (parentWindowHeight / 4);
         }
 
         private async void RegisterNXMButton_Click(object? sender, RoutedEventArgs e)
