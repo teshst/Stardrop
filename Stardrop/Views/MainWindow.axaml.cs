@@ -1230,7 +1230,7 @@ namespace Stardrop.Views
         {
             Program.helper.Log($"Opening settings window");
 
-            var editorWindow = new SettingsWindow();
+            var editorWindow = new SettingsWindow(this);
             editorWindow.WindowStartupLocation = WindowStartupLocation.CenterOwner;
             if (await editorWindow.ShowDialog<bool>(this))
             {

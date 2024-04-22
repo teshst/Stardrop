@@ -25,7 +25,6 @@ namespace Stardrop.Views
         public SettingsWindow()
         {
             InitializeComponent();
-            this.SizeToContent = SizeToContent.Height;
 
             // Set the datacontext
             DataContext = new SettingsWindowViewModel();
@@ -127,6 +126,12 @@ namespace Stardrop.Views
 #if DEBUG
             this.AttachDevTools();
 #endif
+        }
+
+        public SettingsWindow(Window parentWindow) : this()
+        {
+            // Adjust the height of the this window to be slightly smaller than the parent
+            this.Height = parentWindow.Height - (parentWindow.Height / 4);
         }
 
         private async void RegisterNXMButton_Click(object? sender, RoutedEventArgs e)
