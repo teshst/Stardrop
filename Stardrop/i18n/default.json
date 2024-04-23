@@ -162,7 +162,7 @@
 
   // Downloads Panel - Tooltips
   "ui.downloads_panel.tooltips.cancel_button": "Cancel",  
-  "ui.downloads_panel.tooltips.remove_button": "Remove", // Tooltip for the button that clears out a removed or failed download
+  "ui.downloads_panel.tooltips.remove_button": "Remove", // Tooltip for the button that clears out a completed or failed download
 
   // Warnings
   "ui.warning.unable_to_add_profile": "Unable to add {0}, a profile already exists under that name!",
