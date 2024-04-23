@@ -249,5 +249,13 @@
   "internal.no": "No",
   "internal.no_all": "No to All",
   "internal.ok": "OK",
-  "internal.unlock": "Unlock"
+  "internal.unlock": "Unlock",
+
+  // Internals - Measurements
+  "internal.measurements.bytes_size": "B",
+  "internal.measurements.bytes_per_second": "B/s",
+  "internal.measurements.kilobytes_size": "KB",
+  "internal.measurements.kilobytes_per_second": "KB/s",
+  "internal.measurements.megabytes_size": "MB",
+  "internal.measurements.megabytes_per_second": "MB/s"
 }

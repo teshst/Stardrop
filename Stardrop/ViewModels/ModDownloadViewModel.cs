@@ -87,15 +87,15 @@ namespace Stardrop.ViewModels
                     double bytesPerSecond = bytes / elapsedSeconds;
                     if (bytesPerSecond > 1024 * 1024)  // MB 
                     {
-                        return $"{(bytesPerSecond / (1024 * 1024)):N2} MB/s";
+                        return $"{(bytesPerSecond / (1024 * 1024)):N2} {Program.translation.Get("internal.measurements.megabytes_per_second")}";
                     }
                     else if (bytesPerSecond > 1024) // KB
                     {
-                        return $"{(bytesPerSecond / 1024):N2} KB/s";
+                        return $"{(bytesPerSecond / 1024):N2} {Program.translation.Get("internal.measurements.kilobytes_per_second")}";
                     }
                     else // Bytes
                     {
-                        return $"{bytesPerSecond:N0} B/s";
+                        return $"{bytesPerSecond:N0} {Program.translation.Get("internal.measurements.bytes_per_second")}";
                     }
                 }).ToProperty(this, x => x.DownloadSpeedLabel, out _downloadSpeedLabel);
 
@@ -107,7 +107,7 @@ namespace Stardrop.ViewModels
                     string bytesString = ToHumanReadable(x.Bytes);
                     if (x.Total is null)
                     {
-                        return $"{bytesString} / ??? MB";
+                        return $"{bytesString} / ??? {Program.translation.Get("internal.measurements.megabytes_size")}";
                     }
                     else
                     {
@@ -119,15 +119,15 @@ namespace Stardrop.ViewModels
                     {
                         if (bytes > 1024 * 1024) // MB
                         {
-                            return $"{(bytes / (1024.0 * 1024.0)):N2} MB";
+                            return $"{(bytes / (1024.0 * 1024.0)):N2} {Program.translation.Get("internal.measurements.megabytes_size")}";
                         }
                         else if (bytes > 1024) // KB
                         {
-                            return $"{(bytes / 1024.0):N2} KB";
+                            return $"{(bytes / 1024.0):N2} {Program.translation.Get("internal.measurements.kilobytes_size")}";
                         }
                         else
                         {
-                            return $"{bytes:N0} B";
+                            return $"{bytes:N0} {Program.translation.Get("internal.measurements.bytes_size")}";
                         }
                     }
                 }).ToProperty(this, x => x.DownloadProgressLabel, out _downloadProgressLabel);
