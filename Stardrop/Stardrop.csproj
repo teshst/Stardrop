@@ -61,6 +61,9 @@
 		<Compile Update="Views\WarningWindow.axaml.cs">
 			<DependentUpon>WarningWindow.axaml</DependentUpon>
 		</Compile>
+        <Compile Update="Views\DownloadPanel.axaml.cs">
+            <DependentUpon>DownloadPanel.axaml</DependentUpon>
+        </Compile>
 	</ItemGroup>
 	<ItemGroup>
 		<Content Update="Themes\Light.xaml">

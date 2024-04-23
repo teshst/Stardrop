@@ -82,6 +82,9 @@
   "ui.main_window.button.update_status.list_available_updates": "Mods Ready to Update: {0}",
   "ui.main_window.button.update_status.failed": "Mod Update Check Failed",
 
+  // Main Window - Buttons - Downloads
+  "ui.main_window.buttons.downloads.label": "Downloads ({0})",
+
   // Main Window - ComboBox
   "ui.main_window.combobox.show_all_mods": "Show All Mods",
   "ui.main_window.combobox.show_mods_with_configs": "Show Configurable Mods",
@@ -151,6 +154,16 @@
   "ui.nexus_login.labels.username": "Username: {0}",
   "ui.nexus_login.labels.is_premium": "Is Premium Member: {0}",
 
+  // Downloads Panel - Labels
+  "ui.downloads_panel.download_canceled": "Canceled",
+  "ui.downloads_panel.download_failed": "Failed",
+  "ui_downloads_panel.download_success": "Complete!",
+  "ui.downloads_panel.no_downloads_label":  "No downloads in progress",
+
+  // Downloads Panel - Tooltips
+  "ui.downloads_panel.tooltips.cancel_button": "Cancel",  
+  "ui.downloads_panel.tooltips.remove_button": "Remove", // Tooltip for the button that clears out a completed or failed download
+
   // Warnings
   "ui.warning.unable_to_add_profile": "Unable to add {0}, a profile already exists under that name!",
   "ui.warning.given_mod_folder_does_not_exist": "The given mod folder path doesn't exist.\n\nReverting to previous path.",
@@ -169,7 +182,6 @@
   "ui.warning.mod_deleting": "Deleting old instance of {0}",
   "ui.warning.failed_to_delete": "Failed to delete {0}.\n\nMod files may be locked, see log for details.",
   "ui.warning.failed_to_delete_during_update": "Failed to delete the old instance of {0}.\n\nThe mod may install incorrectly.",
-
   "ui.warning.unable_to_locate_smapi": "Unable to locate StardewModdingAPI.exe\n\nPlease set the correct file path under\nView > Settings",
   "ui.warning.mod_config_saved_but_not_enabled": "Saved mod config settings to profile {0}, however profile specific mod configs are not enabled.\n\nGo to View > Settings and check \"Enable Profile Specific Mod Configs\" for Stardrop to automatically save and apply mod config changes.",
   "ui.warning.unable_to_determine_profile": "Unable to determine selected profile.\n\nSMAPI will not be started.",
@@ -237,5 +249,13 @@
   "internal.no": "No",
   "internal.no_all": "No to All",
   "internal.ok": "OK",
-  "internal.unlock": "Unlock"
+  "internal.unlock": "Unlock",
+
+  // Internals - Measurements
+  "internal.measurements.bytes_size": "B",
+  "internal.measurements.bytes_per_second": "B/s",
+  "internal.measurements.kilobytes_size": "KB",
+  "internal.measurements.kilobytes_per_second": "KB/s",
+  "internal.measurements.megabytes_size": "MB",
+  "internal.measurements.megabytes_per_second": "MB/s"
 }
