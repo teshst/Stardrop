@@ -19,7 +19,7 @@
     </Design.DataContext>
 
     <UserControl.Resources>
-        <conv:EnumToBoolConveter x:Key="EnumToBoolConverter"/>
+        <conv:EnumEqualsConverter x:Key="EnumEqualsConverter"/>
     </UserControl.Resources>
 
     <UserControl.Styles>
@@ -65,15 +65,15 @@
                         <!--Each of the Classes.className variables is a boolean. The converter checks the current DownloadStatus and sets
                         the appropriate Classes.className to 'True', which then causes the style to kick in and fill in the UI with one of the 
                         styles defined below. This simulates a Visual State Manager like WPF or UWP uses.-->
-                        <ContentControl Classes.notStarted="{Binding DownloadStatus, Converter={StaticResource EnumToBoolConverter}, 
+                        <ContentControl Classes.notStarted="{Binding DownloadStatus, Converter={StaticResource EnumEqualsConverter}, 
                                             ConverterParameter={x:Static vm:ModDownloadStatus.NotStarted}}"
-                                        Classes.inProgress="{Binding DownloadStatus, Converter={StaticResource EnumToBoolConverter}, 
+                                        Classes.inProgress="{Binding DownloadStatus, Converter={StaticResource EnumEqualsConverter}, 
                                             ConverterParameter={x:Static vm:ModDownloadStatus.InProgress}}"
-                                        Classes.successful="{Binding DownloadStatus, Converter={StaticResource EnumToBoolConverter}, 
+                                        Classes.successful="{Binding DownloadStatus, Converter={StaticResource EnumEqualsConverter}, 
                                             ConverterParameter={x:Static vm:ModDownloadStatus.Successful}}"
-                                        Classes.canceled="{Binding DownloadStatus, Converter={StaticResource EnumToBoolConverter}, 
+                                        Classes.canceled="{Binding DownloadStatus, Converter={StaticResource EnumEqualsConverter}, 
                                             ConverterParameter={x:Static vm:ModDownloadStatus.Canceled}}"
-                                        Classes.failed="{Binding DownloadStatus, Converter={StaticResource EnumToBoolConverter}, 
+                                        Classes.failed="{Binding DownloadStatus, Converter={StaticResource EnumEqualsConverter}, 
                                             ConverterParameter={x:Static vm:ModDownloadStatus.Failed}}"/>
                     </DataTemplate>
                 </ItemsRepeater.ItemTemplate>

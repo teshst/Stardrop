@@ -4,7 +4,7 @@ using System.Globalization;
 
 namespace Stardrop.Converters
 {
-    public class EnumToBoolConveter : IValueConverter
+    public class EnumEqualsConverter : IValueConverter
     {
         public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
         {

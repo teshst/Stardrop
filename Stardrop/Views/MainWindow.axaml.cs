@@ -23,6 +23,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Reactive.Linq;
 using System.Runtime.InteropServices;
 using System.Text.Json;
 using System.Text.RegularExpressions;
@@ -1507,7 +1508,7 @@ namespace Stardrop.Views
         }
 
         private async Task HandleBulkModInstall()
-        {            
+        {
             if (Nexus.Client is null)
             {
                 return;
@@ -1554,7 +1555,7 @@ namespace Stardrop.Views
         private async Task HandleNexusConnection()
         {
             // If the user is logged out
-            if (Nexus.Client is null)            
+            if (Nexus.Client is null)
             {
                 // Check if they have a cached key
                 string? apiKey = Nexus.GetCachedKey();
@@ -1571,7 +1572,7 @@ namespace Stardrop.Views
                     }
                 }
 
-                await SetupNexusConnection(apiKey);           
+                await SetupNexusConnection(apiKey);
                 if (Nexus.Client is null)
                 {
                     // Failed to create, warn the user
@@ -1587,7 +1588,7 @@ namespace Stardrop.Views
                 File.WriteAllText(Pathing.GetNotionCachePath(), JsonSerializer.Serialize(new PairedKeys { Lock = obscurer.Key, Vector = obscurer.Vector }, new JsonSerializerOptions() { WriteIndented = true }));
 
                 // Set the status
-                _viewModel.NexusStatus = Program.translation.Get("internal.connected");                                
+                _viewModel.NexusStatus = Program.translation.Get("internal.connected");
 
                 // Update any required NexusClient Mods related components
                 await CheckForNexusConnection();
@@ -1601,7 +1602,7 @@ namespace Stardrop.Views
             detailsWindow.WindowStartupLocation = WindowStartupLocation.CenterOwner;
             if (await detailsWindow.ShowDialog<bool>(this) is true)
             {
-                Nexus.ClearClient();                
+                Nexus.ClearClient();
             }
         }
 
@@ -1628,13 +1629,13 @@ namespace Stardrop.Views
 
         internal async Task<bool> ProcessNXMLink(NXM nxmLink)
         {
-                            
+
             if (Nexus.Client is null)
             {
                 await CreateWarningWindow(Program.translation.Get("ui.message.require_nexus_login"), Program.translation.Get("internal.ok"));
                 return false;
             }
-            
+
 
             if (await ValidateSMAPIPath() is false)
             {
@@ -2017,10 +2018,10 @@ namespace Stardrop.Views
             if (Nexus.Client is not null)
             {
                 return;
-            }            
+            }
 
             // Create a global Nexus client. Further setup gets taken care of in NexusClientChanged.
-            await Nexus.CreateClient(apiKey);         
+            await Nexus.CreateClient(apiKey);
         }
 
         private async void NexusClientChanged(NexusClient? oldClient, NexusClient? newClient)
@@ -2033,7 +2034,7 @@ namespace Stardrop.Views
                 _viewModel.ShowEndorsements = false;
                 _viewModel.ShowInstalls = false;
             }
-            
+
             if (newClient is not null)
             {
                 newClient.DailyRequestLimitsChanged += NexusDailyLimitsChanged;
@@ -2172,7 +2173,7 @@ namespace Stardrop.Views
             return downloadResult.DownloadedModFilePath;
         }
 
-        public bool TryDeleteMod(Mod mod, int retries=3)
+        public bool TryDeleteMod(Mod mod, int retries = 3)
         {
             try
             {
@@ -2340,7 +2341,7 @@ namespace Stardrop.Views
                                 string modProgressText = String.Format("[{0} / {1}] Mods", currentModIndex, totalMods);
                                 string manifestProgressText = String.Format("[{0} / {1}] Manifests", currentManifestIndex, pathToManifests.Keys.Count);
                                 UpdateLockWindow(String.Concat(modProgressText, "\n", manifestProgressText, "\n\n", individualProgressText), currentManifestIndex, pathToManifests.Keys.Count);
-                                
+
                                 Program.helper.Log($"Install path for mod {manifest.UniqueID}:{installPath}");
                                 var manifestFolderPath = manifestPath.Replace("manifest.json", String.Empty, StringComparison.OrdinalIgnoreCase);
                                 foreach (var entry in archive.Entries.Where(e => e.Key.StartsWith(manifestFolderPath)))
@@ -2627,12 +2628,17 @@ namespace Stardrop.Views
                 return;
             }
 
-            // Initial value
-            _viewModel.DownloadsButtonText = String.Format(Program.translation.Get("ui.main_window.buttons.downloads.label"), 0);
-            // Change listener
-            panelVM.InProgressDownloads.Subscribe(count =>
-            {                
-                _viewModel.DownloadsButtonText = String.Format(Program.translation.Get("ui.main_window.buttons.downloads.label"), count);
+            // Change listener and intial value setter
+            // Both of these need to have a .StartWith(), because a) CombineLatest() will never emit anything until both
+            // sources have emitted *something*, and b) this also ensures that we do intial value setting before 
+            // Downloads count or selected language otherwise changes.
+            Observable.CombineLatest(
+                first: panelVM.InProgressDownloads.StartWith(0),
+                second: Program.translation.WhenAnyPropertyChanged().StartWith(Program.translation),
+                resultSelector: (int count, Translation? translation) => (count, translation!)
+            ).Subscribe(((int downloadCount, Translation translation) x) =>
+            {
+                _viewModel.DownloadsButtonText = String.Format(x.translation.Get("ui.main_window.buttons.downloads.label"), x.downloadCount);
             });
         }
 
