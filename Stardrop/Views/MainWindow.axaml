@@ -1,6 +1,7 @@
 ﻿<Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="using:Stardrop.ViewModels"
+        xmlns:view="using:Stardrop.Views"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:sys="clr-namespace:System;assembly=netstandard"
@@ -34,6 +35,12 @@
 			<Setter Property="Background" Value="Transparent"/>
 			<Setter Property="BorderThickness" Value="0"/>
 		</Style>
+        <Style Selector="FlyoutPresenter.DownloadBoxFlyout">
+            <Setter Property="Background" Value="{DynamicResource ThemeBackgroundBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource HighlightBrush}"/>
+            <Setter Property="Cursor" Value="Arrow"/>
+            <Setter Property="Padding" Value="0"/>
+        </Style>
 		<Style Selector="MenuItem.ColumnActive">
 			<Setter Property="i:MenuItem.Icon" Value="mdi-check-outline" />
 		</Style>
@@ -638,21 +645,21 @@
 		</DockPanel>
 		<Border Grid.Row="5" Grid.ColumnSpan="2" BorderBrush="{DynamicResource HighlightBrush}" BorderThickness="0 2 0 0">
 			<Grid>
-				<Grid.ColumnDefinitions>
-					<ColumnDefinition Width="*" />
-					<ColumnDefinition Width="Auto" />
-					<ColumnDefinition Width="Auto" />
-					<ColumnDefinition Width="Auto" />
-				</Grid.ColumnDefinitions>
-				<Button Name="nexusModsButton" Content="{Binding NexusStatus}" Grid.Column="0" Classes="hyperlink" HorizontalAlignment="Right" VerticalAlignment="Center"/>
-				<TextBlock Text="{Binding NexusLimits}" Grid.Column="1" HorizontalAlignment="Right" VerticalAlignment="Center" Foreground="{DynamicResource ThemeForegroundBrush}" IsVisible="{Binding ShowEndorsements}"/>
-				<TextBlock Text=" | " Grid.Column="2" HorizontalAlignment="Right" VerticalAlignment="Center" Foreground="{DynamicResource ThemeForegroundBrush}"/>
-				<Button Content="{Binding Version}" Grid.Column="3" Classes="hyperlink" Command="{Binding OpenBrowser}" CommandParameter="https://www.nexusmods.com/stardewvalley/mods/10455" HorizontalAlignment="Right" VerticalAlignment="Center"/>
-			</Grid>
-
+                <Button Name="statusBarButton" Content="{Binding UpdateStatusText}" Grid.Column="0" Classes="hyperlink" Click="ModUpdateCheck_Click" HorizontalAlignment="Left"/>                
+                <Button Name="downloadButton" Content="{Binding DownloadsButtonText}" Grid.Column="0" Classes="hyperlink" HorizontalAlignment="Center">
+                    <Button.Flyout>
+                        <Flyout FlyoutPresenterClasses="DownloadBoxFlyout">
+							<view:DownloadPanel x:Name="DownloadPanel" />
+                        </Flyout>
+                    </Button.Flyout>
+                </Button>
+                <Grid ColumnDefinitions="Auto, Auto, Auto, Auto" HorizontalAlignment="Right">
+                    <Button Name="nexusModsButton" Content="{Binding NexusStatus}" Grid.Column="0" Classes="hyperlink" HorizontalAlignment="Right" Padding="8,0,8,0" VerticalAlignment="Center"/>
+                    <TextBlock Text="{Binding NexusLimits}" Grid.Column="1" HorizontalAlignment="Right" VerticalAlignment="Center" Foreground="{DynamicResource ThemeForegroundBrush}" IsVisible="{Binding ShowEndorsements}"/>
+                    <TextBlock Text=" | " Grid.Column="2" HorizontalAlignment="Right" VerticalAlignment="Center" Foreground="{DynamicResource ThemeForegroundBrush}"/>
+                    <Button Content="{Binding Version}" Grid.Column="3" Classes="hyperlink" Command="{Binding OpenBrowser}" CommandParameter="https://www.nexusmods.com/stardewvalley/mods/10455" HorizontalAlignment="Right" Padding="8,0,8,0" VerticalAlignment="Center"/>
+                </Grid>
+            </Grid>
 		</Border>
-		<Menu Grid.Row="5" Grid.Column="0" Name="statusBar" HorizontalAlignment="Left" KeyboardNavigation.TabNavigation="None">
-			<MenuItem Header="{Binding UpdateStatusText}" Click="ModUpdateCheck_Click" Classes="Bar"/>
-		</Menu>
 	</Grid>
 </Window>

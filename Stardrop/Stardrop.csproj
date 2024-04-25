@@ -3,7 +3,7 @@
 		<OutputType>WinExe</OutputType>
 		<TargetFramework>net7.0</TargetFramework>
 		<Nullable>enable</Nullable>
-		<Version>1.1.2</Version>
+		<Version>1.2.0</Version>
 		<AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
 		<IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
 		<ApplicationIcon>Assets\icon.ico</ApplicationIcon>
@@ -61,6 +61,9 @@
 		<Compile Update="Views\WarningWindow.axaml.cs">
 			<DependentUpon>WarningWindow.axaml</DependentUpon>
 		</Compile>
+        <Compile Update="Views\DownloadPanel.axaml.cs">
+            <DependentUpon>DownloadPanel.axaml</DependentUpon>
+        </Compile>
 	</ItemGroup>
 	<ItemGroup>
 		<Content Update="Themes\Light.xaml">

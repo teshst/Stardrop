@@ -3,6 +3,8 @@ using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Markup.Xaml;
 using Avalonia.Threading;
+using DynamicData;
+using DynamicData.Binding;
 using Semver;
 using SharpCompress.Archives;
 using SharpCompress.Common;
@@ -21,6 +23,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Reactive.Linq;
 using System.Runtime.InteropServices;
 using System.Text.Json;
 using System.Text.RegularExpressions;
@@ -137,10 +140,6 @@ namespace Stardrop.Views
             {
                 CheckForModUpdates(_viewModel.Mods.ToList(), probe: true);
             }
-
-            // Check if we have a valid Nexus Mods key
-            Nexus.SetDisplayWindow(_viewModel);
-            CheckForNexusConnection();
 
             // Start sentinel for watching NXM files
             if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX) is false)
@@ -327,22 +326,21 @@ namespace Stardrop.Views
                 await HandleSMAPIUpdateCheck(false);
             }
 
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) && NXMProtocol.Validate(Program.executablePath) is false && await Nexus.ValidateKey(Nexus.GetKey()))
+
+            // Register a handler to watch whenever the Nexus client changes, so setpu and teardown get handled automatically
+            Nexus.ClientChanged += NexusClientChanged;
+
+            // Set up the Nexus Mods connection, and attempt to register for the NXM URI protocol
+            await CheckForNexusConnection();
+
+            if (String.IsNullOrEmpty(Program.nxmLink) is false)
             {
-                var requestWindow = new MessageWindow(Program.translation.Get("ui.message.confirm_nxm_association"));
-                if (await requestWindow.ShowDialog<bool>(this))
-                {
-                    if (NXMProtocol.Register(Program.executablePath) is false)
-                    {
-                        await new WarningWindow(Program.translation.Get("ui.warning.failed_to_set_association"), Program.translation.Get("internal.ok")).ShowDialog(this);
-                    }
-                }
-            }
-            else if (String.IsNullOrEmpty(Program.nxmLink) is false)
-            {
-                await ProcessNXMLink(Nexus.GetKey(), new NXM() { Link = Program.nxmLink, Timestamp = DateTime.Now });
+                await ProcessNXMLink(new NXM() { Link = Program.nxmLink, Timestamp = DateTime.Now });
                 Program.nxmLink = null;
             }
+
+            // Set up handler for listening to download count
+            SetupDownloadCountListener();
         }
 
         private async Task CreateWarningWindow(string warningText, string buttonText)
@@ -371,7 +369,7 @@ namespace Stardrop.Views
             await GetCachedModUpdates(_viewModel.Mods.ToList(), skipCacheCheck: true);
 
             _viewModel.EvaluateRequirements();
-            _viewModel.UpdateEndorsements(Nexus.GetKey());
+            _viewModel.UpdateEndorsements();
             _viewModel.UpdateFilter();
 
             _viewModel.DragOverColor = "#ff9f2a";
@@ -406,7 +404,6 @@ namespace Stardrop.Views
 
             try
             {
-                var apiKey = Nexus.GetKey();
                 var nxmLinks = new List<NXM>();
 
                 // Gather the NXM links, then clear the file
@@ -426,7 +423,7 @@ namespace Stardrop.Views
                 // Process each link
                 foreach (var nxmLink in nxmLinks)
                 {
-                    if (await ProcessNXMLink(apiKey, nxmLink) is false)
+                    if (await ProcessNXMLink(nxmLink) is false)
                     {
                         break;
                     }
@@ -801,8 +798,7 @@ namespace Stardrop.Views
                 return;
             }
 
-            var apiKey = Nexus.GetKey();
-            if (String.IsNullOrEmpty(apiKey))
+            if (Nexus.Client is null)
             {
                 return;
             }
@@ -816,7 +812,7 @@ namespace Stardrop.Views
             int modId = (int)clickedMod.NexusModId;
 
             bool targetState = !clickedMod.IsEndorsed;
-            var result = await Nexus.SetModEndorsement(apiKey, modId, targetState);
+            var result = await Nexus.Client.SetModEndorsement(modId, targetState);
             if (result == EndorsementResponse.Endorsed || result == EndorsementResponse.Abstained)
             {
                 _viewModel.Mods.First(m => m.NexusModId == modId).IsEndorsed = targetState;
@@ -855,10 +851,9 @@ namespace Stardrop.Views
             {
                 return;
             }
-            var apiKey = Nexus.GetKey();
 
             // Install the mod
-            var downloadedFilePath = await InstallModViaNexus(apiKey, clickedMod);
+            var downloadedFilePath = await InstallModViaNexus(clickedMod);
             if (String.IsNullOrEmpty(downloadedFilePath))
             {
                 return;
@@ -875,7 +870,7 @@ namespace Stardrop.Views
             }
 
             _viewModel.EvaluateRequirements();
-            _viewModel.UpdateEndorsements(apiKey);
+            _viewModel.UpdateEndorsements();
             _viewModel.UpdateFilter();
         }
 
@@ -1222,7 +1217,7 @@ namespace Stardrop.Views
             await GetCachedModUpdates(_viewModel.Mods.ToList(), skipCacheCheck: true);
 
             _viewModel.EvaluateRequirements();
-            _viewModel.UpdateEndorsements(Nexus.GetKey());
+            _viewModel.UpdateEndorsements();
             _viewModel.UpdateFilter();
         }
 
@@ -1230,7 +1225,7 @@ namespace Stardrop.Views
         {
             Program.helper.Log($"Opening settings window");
 
-            var editorWindow = new SettingsWindow();
+            var editorWindow = new SettingsWindow(this.Height);
             editorWindow.WindowStartupLocation = WindowStartupLocation.CenterOwner;
             if (await editorWindow.ShowDialog<bool>(this))
             {
@@ -1514,8 +1509,7 @@ namespace Stardrop.Views
 
         private async Task HandleBulkModInstall()
         {
-            var apiKey = Nexus.GetKey();
-            if (String.IsNullOrEmpty(apiKey))
+            if (Nexus.Client is null)
             {
                 return;
             }
@@ -1534,7 +1528,7 @@ namespace Stardrop.Views
             List<string> updateFilePaths = new List<string>();
             foreach (var mod in _viewModel.Mods.Where(m => String.IsNullOrEmpty(m.InstallStatus) is false))
             {
-                var downloadFilePath = await InstallModViaNexus(apiKey, mod);
+                var downloadFilePath = await InstallModViaNexus(mod);
 
                 if (String.IsNullOrEmpty(downloadFilePath))
                 {
@@ -1554,29 +1548,34 @@ namespace Stardrop.Views
             }
 
             _viewModel.EvaluateRequirements();
-            _viewModel.UpdateEndorsements(apiKey);
+            _viewModel.UpdateEndorsements();
             _viewModel.UpdateFilter();
         }
 
         private async Task HandleNexusConnection()
         {
-            if (String.IsNullOrEmpty(Nexus.GetKey()) || File.Exists(Pathing.GetNotionCachePath()) is false)
+            // If the user is logged out
+            if (Nexus.Client is null)
             {
-                // Display the login window
-                var loginWindow = new NexusLogin(_viewModel);
-                loginWindow.WindowStartupLocation = WindowStartupLocation.CenterOwner;
-                var apiKey = await loginWindow.ShowDialog<string>(this);
-
-                if (String.IsNullOrEmpty(apiKey))
+                // Check if they have a cached key
+                string? apiKey = Nexus.GetCachedKey();
+                if (apiKey is null)
                 {
-                    return;
+                    // If not, display the login window
+                    var loginWindow = new NexusLogin(_viewModel);
+                    loginWindow.WindowStartupLocation = WindowStartupLocation.CenterOwner;
+                    apiKey = await loginWindow.ShowDialog<string>(this);
+
+                    if (String.IsNullOrEmpty(apiKey))
+                    {
+                        return;
+                    }
                 }
 
-                // Attempt to validate the API key
-                var isKeyValid = await Nexus.ValidateKey(apiKey);
-                if (isKeyValid is false)
+                await SetupNexusConnection(apiKey);
+                if (Nexus.Client is null)
                 {
-                    // Failed to validate, warn the user
+                    // Failed to create, warn the user
                     await CreateWarningWindow(Program.translation.Get("ui.warning.unable_to_validate_nexus_key"), Program.translation.Get("internal.ok"));
                     return;
                 }
@@ -1591,33 +1590,19 @@ namespace Stardrop.Views
                 // Set the status
                 _viewModel.NexusStatus = Program.translation.Get("internal.connected");
 
-                // Update any required Nexus Mods related components
-                CheckForNexusConnection();
-
-                // Verify NXM protocol usage
-                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) && NXMProtocol.Validate(Program.executablePath) is false && await Nexus.ValidateKey(apiKey))
-                {
-                    var requestWindow = new MessageWindow(Program.translation.Get("ui.message.confirm_nxm_association"));
-                    if (await requestWindow.ShowDialog<bool>(this))
-                    {
-                        if (NXMProtocol.Register(Program.executablePath) is false)
-                        {
-                            await new WarningWindow(Program.translation.Get("ui.warning.failed_to_set_association"), Program.translation.Get("internal.ok")).ShowDialog(this);
-                        }
-                    }
-                }
+                // Update any required NexusClient Mods related components
+                await CheckForNexusConnection();
 
                 return;
             }
 
+            // If the user is logged in
             // Display information window
             var detailsWindow = new NexusInfo(Program.settings.NexusDetails);
             detailsWindow.WindowStartupLocation = WindowStartupLocation.CenterOwner;
             if (await detailsWindow.ShowDialog<bool>(this) is true)
             {
-                _viewModel.NexusStatus = Program.translation.Get("internal.disconnected");
-                _viewModel.ShowEndorsements = false;
-                _viewModel.ShowInstalls = false;
+                Nexus.ClearClient();
             }
         }
 
@@ -1636,19 +1621,21 @@ namespace Stardrop.Views
             _viewModel.EvaluateRequirements();
 
             // Check for Nexus Mods connection perform related tasks
-            CheckForNexusConnection();
+            await CheckForNexusConnection();
 
             // Hide the required mods
             _viewModel.HideRequiredMods();
         }
 
-        internal async Task<bool> ProcessNXMLink(string? apiKey, NXM nxmLink)
+        internal async Task<bool> ProcessNXMLink(NXM nxmLink)
         {
-            if (String.IsNullOrEmpty(apiKey))
+
+            if (Nexus.Client is null)
             {
                 await CreateWarningWindow(Program.translation.Get("ui.message.require_nexus_login"), Program.translation.Get("internal.ok"));
                 return false;
             }
+
 
             if (await ValidateSMAPIPath() is false)
             {
@@ -1656,7 +1643,7 @@ namespace Stardrop.Views
             }
 
             Program.helper.Log($"Processing NXM link: {nxmLink.Link}");
-            var processedDownloadLink = await Nexus.GetFileDownloadLink(apiKey, nxmLink, EnumParser.GetDescription(Program.settings.PreferredNexusServer));
+            var processedDownloadLink = await Nexus.Client.GetFileDownloadLink(nxmLink, EnumParser.GetDescription(Program.settings.PreferredNexusServer));
             Program.helper.Log($"Processed link: {processedDownloadLink}");
 
             if (String.IsNullOrEmpty(processedDownloadLink))
@@ -1666,7 +1653,7 @@ namespace Stardrop.Views
             }
 
             // Get the mod details
-            var modDetails = await Nexus.GetModDetailsViaNXM(apiKey, nxmLink);
+            var modDetails = await Nexus.Client.GetModDetailsViaNXM(nxmLink);
             if (modDetails is null || String.IsNullOrEmpty(modDetails.Name))
             {
                 await CreateWarningWindow(String.Format(Program.translation.Get("ui.warning.failed_to_get_mod_details"), nxmLink.Link), Program.translation.Get("internal.ok"));
@@ -1676,12 +1663,18 @@ namespace Stardrop.Views
             var requestWindow = new MessageWindow(String.Format(Program.translation.Get("ui.message.confirm_nxm_install"), modDetails.Name));
             if (Program.settings.IsAskingBeforeAcceptingNXM is false || await requestWindow.ShowDialog<bool>(this))
             {
-                var downloadedFilePath = await Nexus.DownloadFileAndGetPath(processedDownloadLink, modDetails.Name);
-                if (downloadedFilePath is null)
+                var downloadResult = await Nexus.Client.DownloadFileAndGetPath(processedDownloadLink, modDetails.Name);
+                if (downloadResult.ResultKind is DownloadResultKind.Failed)
                 {
                     await CreateWarningWindow(String.Format(Program.translation.Get("ui.warning.failed_nexus_install"), modDetails.Name), Program.translation.Get("internal.ok"));
                     return false;
                 }
+                if (downloadResult.ResultKind is DownloadResultKind.UserCanceled)
+                {
+                    // No need for a warning, this is something the user chose intentionally
+                    return false;
+                }
+                string downloadedFilePath = downloadResult.DownloadedModFilePath!;
 
                 var addedMods = await AddMods(new string[] { downloadedFilePath });
                 await CheckForModUpdates(addedMods, useCache: true, skipCacheCheck: true);
@@ -1694,7 +1687,7 @@ namespace Stardrop.Views
                 }
 
                 _viewModel.EvaluateRequirements();
-                _viewModel.UpdateEndorsements(apiKey);
+                _viewModel.UpdateEndorsements();
                 _viewModel.UpdateFilter();
 
                 // Let the user know that the mod was installed via NXM
@@ -1977,20 +1970,28 @@ namespace Stardrop.Views
             _viewModel.IsCheckingForUpdates = false;
         }
 
-        private async void CheckForNexusConnection()
+        private async Task CheckForNexusConnection()
         {
-            var apiKey = Nexus.GetKey();
-            Program.helper.Log($"Attempting to check for Nexus Mods connection (Has Key: {string.IsNullOrEmpty(apiKey) is false})");
+            // Create the client, and open access to Nexus if we haven't already done it
+            await SetupNexusConnection(Nexus.GetCachedKey());
 
-            if (String.IsNullOrEmpty(apiKey) is false && await Nexus.ValidateKey(apiKey))
+            Program.helper.Log($"Attempting to check for Nexus Mods connection (Has valid client: {Nexus.Client is not null})");
+
+            if (Nexus.Client is null)
             {
-                Program.helper.Log($"Nexus Mods connection established.");
+                return;
+            }
 
+            // Validate the user's cached key to ensure it's still valid
+            bool isKeyValid = await Nexus.Client.ValidateKey();
+
+            if (isKeyValid is true)
+            {
                 _viewModel.NexusStatus = Program.translation.Get("internal.connected");
-                _viewModel.NexusLimits = $"(Remaining Daily Requests: {Nexus.dailyRequestsRemaining}) ";
+                _viewModel.NexusLimits = $"(Remaining Daily Requests: {Nexus.Client.DailyRequestsRemaining}) ";
 
                 // Gather any endorsements
-                _viewModel.UpdateEndorsements(apiKey);
+                _viewModel.UpdateEndorsements();
 
                 // Show endorsements
                 _viewModel.ShowEndorsements = true;
@@ -2003,10 +2004,63 @@ namespace Stardrop.Views
                 Program.helper.Log($"Nexus Mods connection failed.");
 
                 Program.settings.NexusDetails = new Models.Nexus.NexusUser();
+                Nexus.ClearClient();
+            }
+        }
 
+        private async Task SetupNexusConnection(string? apiKey)
+        {
+            if (apiKey is null)
+            {
+                return;
+            }
+
+            if (Nexus.Client is not null)
+            {
+                return;
+            }
+
+            // Create a global Nexus client. Further setup gets taken care of in NexusClientChanged.
+            await Nexus.CreateClient(apiKey);
+        }
+
+        private async void NexusClientChanged(NexusClient? oldClient, NexusClient? newClient)
+        {
+            // Tear down old client stuff, if an old client is being discarded
+            if (oldClient is not null)
+            {
+                oldClient.DailyRequestLimitsChanged -= NexusDailyLimitsChanged;
                 _viewModel.NexusStatus = Program.translation.Get("internal.disconnected");
                 _viewModel.ShowEndorsements = false;
                 _viewModel.ShowInstalls = false;
+            }
+
+            if (newClient is not null)
+            {
+                newClient.DailyRequestLimitsChanged += NexusDailyLimitsChanged;
+
+                // Verify NXM protocol usage
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) && NXMProtocol.Validate(Program.executablePath) is false)
+                {
+                    var requestWindow = new MessageWindow(Program.translation.Get("ui.message.confirm_nxm_association"));
+                    if (await requestWindow.ShowDialog<bool>(this))
+                    {
+                        if (NXMProtocol.Register(Program.executablePath) is false)
+                        {
+                            await new WarningWindow(Program.translation.Get("ui.warning.failed_to_set_association"), Program.translation.Get("internal.ok")).ShowDialog(this);
+                        }
+                    }
+                }
+            }
+        }
+
+        private void NexusDailyLimitsChanged(object? sender, EventArgs e)
+        {
+            NexusClient? client = sender as NexusClient;
+            if (client is not null)
+            {
+                _viewModel.NexusStatus = Program.translation.Get("internal.connected");
+                _viewModel.NexusLimits = $"(Remaining Daily Requests: {client.DailyRequestsRemaining}) ";
             }
         }
 
@@ -2069,7 +2123,7 @@ namespace Stardrop.Views
             _viewModel.EnabledModCount = _viewModel.Mods.Where(m => m.IsEnabled && !m.IsHidden).Count();
         }
 
-        private async Task<string?> InstallModViaNexus(string apiKey, Mod mod)
+        private async Task<string?> InstallModViaNexus(Mod mod)
         {
             if (mod is null || mod.InstallState != InstallState.Unknown)
             {
@@ -2077,14 +2131,14 @@ namespace Stardrop.Views
             }
 
             var modId = mod.GetNexusId();
-            if (modId is null || String.IsNullOrEmpty(apiKey))
+            if (modId is null || Nexus.Client is null)
             {
                 await CreateWarningWindow(String.Format(Program.translation.Get("ui.warning.unable_nexus_install"), mod.Name), Program.translation.Get("internal.ok"));
                 return null;
             }
             mod.InstallState = InstallState.Downloading;
 
-            var modFile = await Nexus.GetFileByVersion(apiKey, (int)modId, mod.SuggestedVersion, modFlag: mod.GetNexusFlag());
+            var modFile = await Nexus.Client.GetFileByVersion(modId.Value, mod.SuggestedVersion, modFlag: mod.GetNexusFlag());
             if (modFile is null)
             {
                 await CreateWarningWindow(String.Format(Program.translation.Get("ui.warning.failed_nexus_install"), mod.Name), Program.translation.Get("internal.ok"));
@@ -2092,7 +2146,7 @@ namespace Stardrop.Views
                 return null;
             }
 
-            var modDownloadLink = await Nexus.GetFileDownloadLink(apiKey, (int)modId, modFile.Id, serverName: EnumParser.GetDescription(Program.settings.PreferredNexusServer));
+            var modDownloadLink = await Nexus.Client.GetFileDownloadLink(modId.Value, modFile.Id, serverName: EnumParser.GetDescription(Program.settings.PreferredNexusServer));
             if (modDownloadLink is null)
             {
                 await CreateWarningWindow(String.Format(Program.translation.Get("ui.warning.failed_nexus_install"), mod.Name), Program.translation.Get("internal.ok"));
@@ -2100,19 +2154,26 @@ namespace Stardrop.Views
                 return null;
             }
 
-            var downloadedFilePath = await Nexus.DownloadFileAndGetPath(modDownloadLink, modFile.Name);
-            if (downloadedFilePath is null)
+            var downloadResult = await Nexus.Client.DownloadFileAndGetPath(modDownloadLink, modFile.Name);
+            if (downloadResult.ResultKind is DownloadResultKind.UserCanceled)
+            {
+                mod.InstallState = InstallState.Unknown;
+                // No warning, as the user triggered this intentionally
+                return null;
+            }
+            if (downloadResult.ResultKind is DownloadResultKind.Failed)
             {
                 await CreateWarningWindow(String.Format(Program.translation.Get("ui.warning.failed_nexus_install"), mod.Name), Program.translation.Get("internal.ok"));
                 mod.InstallState = InstallState.Unknown;
                 return null;
             }
+
             mod.InstallState = InstallState.Installing;
 
-            return downloadedFilePath;
+            return downloadResult.DownloadedModFilePath;
         }
 
-        public bool TryDeleteMod(Mod mod, int retries=3)
+        public bool TryDeleteMod(Mod mod, int retries = 3)
         {
             try
             {
@@ -2280,7 +2341,7 @@ namespace Stardrop.Views
                                 string modProgressText = String.Format("[{0} / {1}] Mods", currentModIndex, totalMods);
                                 string manifestProgressText = String.Format("[{0} / {1}] Manifests", currentManifestIndex, pathToManifests.Keys.Count);
                                 UpdateLockWindow(String.Concat(modProgressText, "\n", manifestProgressText, "\n\n", individualProgressText), currentManifestIndex, pathToManifests.Keys.Count);
-                                
+
                                 Program.helper.Log($"Install path for mod {manifest.UniqueID}:{installPath}");
                                 var manifestFolderPath = manifestPath.Replace("manifest.json", String.Empty, StringComparison.OrdinalIgnoreCase);
                                 foreach (var entry in archive.Entries.Where(e => e.Key.StartsWith(manifestFolderPath)))
@@ -2530,11 +2591,6 @@ namespace Stardrop.Views
             }
         }
 
-        private void InitializeComponent()
-        {
-            AvaloniaXamlLoader.Load(this);
-        }
-
         private async Task<bool> ValidateSMAPIPath()
         {
             if (Program.settings.SMAPIFolderPath is not null && File.Exists(Pathing.GetSmapiPath()))
@@ -2557,6 +2613,38 @@ namespace Stardrop.Views
             await CreateWarningWindow(Program.translation.Get("ui.warning.unable_to_locate_smapi"), Program.translation.Get("internal.ok"));
 
             await DisplaySettingsWindow();
+        }
+
+        private void SetupDownloadCountListener()
+        {
+            var downloadPanel = this.FindControl<DownloadPanel>("DownloadPanel");
+            if (downloadPanel is null)
+            {
+                return;
+            }
+
+            if (downloadPanel.DataContext is not DownloadPanelViewModel panelVM)
+            {
+                return;
+            }
+
+            // Change listener and intial value setter
+            // Both of these need to have a .StartWith(), because a) CombineLatest() will never emit anything until both
+            // sources have emitted *something*, and b) this also ensures that we do intial value setting before 
+            // Downloads count or selected language otherwise changes.
+            Observable.CombineLatest(
+                first: panelVM.InProgressDownloads.StartWith(0),
+                second: Program.translation.WhenAnyPropertyChanged().StartWith(Program.translation),
+                resultSelector: (int count, Translation? translation) => (count, translation!)
+            ).Subscribe(((int downloadCount, Translation translation) x) =>
+            {
+                _viewModel.DownloadsButtonText = String.Format(x.translation.Get("ui.main_window.buttons.downloads.label"), x.downloadCount);
+            });
+        }
+
+        private void InitializeComponent()
+        {
+            AvaloniaXamlLoader.Load(this);
         }
     }
 }

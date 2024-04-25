@@ -58,6 +58,8 @@ namespace Stardrop.ViewModels
         public List<string> ColumnFilter { get { return _columnFilter; } set { _columnFilter = value; UpdateFilter(); } }
         private string _updateStatusText = Program.translation.Get("ui.main_window.button.update_status.generic");
         public string UpdateStatusText { get { return _updateStatusText; } set { this.RaiseAndSetIfChanged(ref _updateStatusText, value); } }
+        private string _downloadsButtonText;
+        public string DownloadsButtonText { get => _downloadsButtonText; set => this.RaiseAndSetIfChanged(ref _downloadsButtonText, value); }
         private int _modsWithCachedUpdates;
         public int ModsWithCachedUpdates { get { return _modsWithCachedUpdates; } set { this.RaiseAndSetIfChanged(ref _modsWithCachedUpdates, value); } }
         public string Version { get; set; }
@@ -533,14 +535,14 @@ namespace Stardrop.ViewModels
             return pendingConfigUpdates;
         }
 
-        internal async void UpdateEndorsements(string? apiKey)
+        internal async void UpdateEndorsements()
         {
-            if (String.IsNullOrEmpty(apiKey))
+            if (Nexus.Client is null)
             {
                 return;
             }
 
-            var endorsements = await Nexus.GetEndorsements(apiKey);
+            var endorsements = await Nexus.Client.GetEndorsements();
             foreach (var mod in Mods.Where(m => m.HasUpdateKeys() && endorsements.Any(e => e.Id == m.NexusModId)))
             {
                 mod.IsEndorsed = endorsements.First(e => e.Id == mod.NexusModId).IsEndorsed();
