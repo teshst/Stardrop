@@ -82,6 +82,9 @@
   "ui.main_window.button.update_status.list_available_updates": "ม็อดพร้อมที่จะอัปเดต: {0}",
   "ui.main_window.button.update_status.failed": "ตรวจสอบการอัปเดตม็อดล้มเหลว",
 
+  // Main Window - Buttons - Downloads
+  "ui.main_window.buttons.downloads.label": "ดาวน์โหลด ({0})",
+
   // Main Window - ComboBox
   "ui.main_window.combobox.show_all_mods": "แสดงม็อดทั้งหมด",
   "ui.main_window.combobox.show_mods_with_configs": "แสดงม็อดที่กำหนดค่าได้",
@@ -151,6 +154,16 @@
   "ui.nexus_login.labels.username": "ชื่อผู้ใช้: {0}",
   "ui.nexus_login.labels.is_premium": "เป็นสมาชิกพรีเมี่ยม: {0}",
 
+  // Downloads Panel - Labels
+  "ui.downloads_panel.download_canceled": "ยกเลิกแล้ว",
+  "ui.downloads_panel.download_failed": "ล้มเหลว",
+  "ui_downloads_panel.download_success": "เสร็จสมบูรณ์!",
+  "ui.downloads_panel.no_downloads_label":  "ไม่มีการดาวน์โหลดอยู่ระหว่างดำเนินการ",
+
+  // Downloads Panel - Tooltips
+  "ui.downloads_panel.tooltips.cancel_button": "ยกเลิก",  
+  "ui.downloads_panel.tooltips.remove_button": "ลบจากประวัติ", // Tooltip for the button that clears out a completed or failed download
+
   // Warnings
   "ui.warning.unable_to_add_profile": "ไม่สามารถเพิ่ม {0} โปรไฟล์มีอยู่แล้วภายใต้ชื่อนั้น!",
   "ui.warning.given_mod_folder_does_not_exist": "ไม่มีเส้นทางของโฟลเดอร์ม็อดที่ระบุ\n\nกำลังย้อนกลับไปยังเส้นทางก่อนหน้า",
@@ -169,7 +182,6 @@
   "ui.warning.mod_deleting": "กำลังลบอินสแตนซ์เก่าของ {0}",
   "ui.warning.failed_to_delete": "ลบ {0} ไม่สำเร็จ\n\nไฟล์ม็อดอาจถูกล็อก โปรดดูรายละเอียดในบันทึก",
   "ui.warning.failed_to_delete_during_update": "ไม่สามารถลบอินสแตนซ์เก่าของ {0} ได้\n\nม็อดอาจติดตั้งไม่ถูกต้อง",
-
   "ui.warning.unable_to_locate_smapi": "ไม่พบ StardewModdingAPI.exe\n\nโปรดตั้งค่าเส้นทางไฟล์ที่ถูกต้องใน\nมุมมอง > ตั้งค่า",
   "ui.warning.mod_config_saved_but_not_enabled": "บันทึกการตั้งค่าการกำหนดค่าม็อดไปที่โปรไฟล์ {0} อย่างไรก็ตาม การกำหนดค่าม็อดเฉพาะโปรไฟล์ไม่ได้เปิดใช้งาน\n\nไปที่ มุมมอง > ตั้งค่า และตรวจสอบ \"เปิดใช้งานการกำหนดค่าม็อดเฉพาะโปรไฟล์\" เพื่อให้ Stardrop บันทึกและใช้การเปลี่ยนแปลงการกำหนดค่าม็อดโดยอัตโนมัติ",
   "ui.warning.unable_to_determine_profile": "ไม่สามารถระบุโปรไฟล์ที่เลือกได้\n\nSMAPI จะไม่เริ่มทำงาน",
@@ -237,5 +249,13 @@
   "internal.no": "ไม่",
   "internal.no_all": "ไม่ใช่ทั้งหมด",
   "internal.ok": "ตกลง",
-  "internal.unlock": "ปลดล็อก"
+  "internal.unlock": "ปลดล็อก",
+
+  // Internals - Measurements
+  "internal.measurements.bytes_size": "B",
+  "internal.measurements.bytes_per_second": "B/s",
+  "internal.measurements.kilobytes_size": "KB",
+  "internal.measurements.kilobytes_per_second": "KB/s",
+  "internal.measurements.megabytes_size": "MB",
+  "internal.measurements.megabytes_per_second": "MB/s"
 }
