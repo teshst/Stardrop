@@ -1,6 +1,6 @@
 # Flatpak
 
-This fork of Stardrop is for my own community flatpak package built from the official Stardrop repo without any custom changes to the code base.
+This fork of Stardrop is for my own community flatpak package built from a 1:1 copy of Stardrop repo without any custom changes to the code base.
 
 This project only exist to provide a reliable flatpak that is 1:1 of the official repo until the developers support an official flatpak version.
 
